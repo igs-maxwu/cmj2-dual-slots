@@ -1,0 +1,19 @@
+{
+  "symbols": [
+    { "id": 0,  "name": "Yi-Wan",   "element": "man",   "tier": 1, "weight": 18, "color": "#FF6B6B", "shape": "man1",   "coinMult": 1.0, "dmgMult": 1.0, "traitKey": "" },
+    { "id": 1,  "name": "Wu-Wan",   "element": "man",   "tier": 2, "weight": 8,  "color": "#E63946", "shape": "man5",   "coinMult": 1.0, "dmgMult": 1.8, "traitKey": "" },
+    { "id": 2,  "name": "Jiu-Wan",  "element": "man",   "tier": 3, "weight": 3,  "color": "#9B1B30", "shape": "man9",   "coinMult": 1.0, "dmgMult": 4.0, "traitKey": "pierce" },
+    { "id": 3,  "name": "Yi-Pin",   "element": "pin",   "tier": 1, "weight": 18, "color": "#48CAE4", "shape": "pin1",   "coinMult": 1.5, "dmgMult": 0.8, "traitKey": "" },
+    { "id": 4,  "name": "Wu-Pin",   "element": "pin",   "tier": 2, "weight": 8,  "color": "#0096C7", "shape": "pin5",   "coinMult": 2.0, "dmgMult": 0.8, "traitKey": "" },
+    { "id": 5,  "name": "Jiu-Pin",  "element": "pin",   "tier": 3, "weight": 3,  "color": "#023E8A", "shape": "pin9",   "coinMult": 5.0, "dmgMult": 1.0, "traitKey": "refund" },
+    { "id": 6,  "name": "Yi-Sou",   "element": "sou",   "tier": 1, "weight": 18, "color": "#52B788", "shape": "sou1",   "coinMult": 1.2, "dmgMult": 1.2, "traitKey": "" },
+    { "id": 7,  "name": "Wu-Sou",   "element": "sou",   "tier": 2, "weight": 8,  "color": "#2D6A4F", "shape": "sou5",   "coinMult": 1.5, "dmgMult": 1.5, "traitKey": "" },
+    { "id": 8,  "name": "Jiu-Sou",  "element": "sou",   "tier": 3, "weight": 3,  "color": "#1B4332", "shape": "sou9",   "coinMult": 1.5, "dmgMult": 1.5, "traitKey": "double_eval" },
+    { "id": 9,  "name": "Feng",     "element": "honor", "tier": 1, "weight": 15, "color": "#FFD166", "shape": "wind",   "coinMult": 1.0, "dmgMult": 1.0, "traitKey": "skill_plus1" },
+    { "id": 10, "name": "Zhong-Fa", "element": "honor", "tier": 2, "weight": 7,  "color": "#EF9B0F", "shape": "dragon", "coinMult": 1.2, "dmgMult": 1.2, "traitKey": "skill_plus2" },
+    { "id": 11, "name": "Bai",      "element": "honor", "tier": 3, "weight": 2,  "color": "#F8F9FA", "shape": "white",  "coinMult": 1.0, "dmgMult": 1.0, "traitKey": "skill_resonance" },
+    { "id": 12, "name": "Que-Wang", "element": "wild",  "tier": 3, "weight": 2,  "color": "#B5179E", "shape": "star",   "coinMult": 2.0, "dmgMult": 2.0, "traitKey": "wild" }
+  ],
+  "payoutBase": { "3": 5, "4": 20, "5": 100 },
+  "linesCount": 100
+}

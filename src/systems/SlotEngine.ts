@@ -6,6 +6,7 @@
 import {
   resolve as resolveSkills,
   type ResolvedEffect,
+  type ResolvedEffects,
   type SkillContext,
   type SideRoundState,
 } from './SkillResolver';
@@ -69,27 +70,54 @@ export interface SideResult {
   coinWon:    number;
   dmgDealt:   number;
   hitLines:   HitLine[];
-  /** Normalized effects produced by SkillResolver this round (T1.2 will act on them). */
+  /** Normalized effects produced by SkillResolver this round. */
   triggeredSkills: ResolvedEffect[];
+  /**
+   * True when a `pierce_formation` effect fired this round.
+   * GameScene / damage-distribution layer should skip front-row soak when set.
+   */
+  pierceFormation: boolean;
+  /**
+   * True when a `refund_bet` effect fired this round.
+   * Game layer may refund the bet cost for this spin.
+   */
+  betRefunded: boolean;
 }
 
 /**
  * Per-side cross-round state. Lives outside SideResult because it
- * must persist between spins. T1.2 will expand this with more fields
- * (buff stacks, cooldowns, etc.).
+ * must persist between spins.
+ *
+ * T1.2: added `hp` and `maxHp` arrays so SkillResolver can read and
+ * mutate spirit health (revive, halve-strongest, hp_threshold trigger).
+ * Both arrays are parallel to the side's spirit roster.  The game layer
+ * (GameScene / simulate.ts) is responsible for initialising them before
+ * the first spin; the engine propagates mutations across rounds.
  */
 export interface RoundState {
   /** Spirit IDs that already burned their `once: true` revive trigger. */
   usedRevive:         Set<string>;
-  /** Rounds of damage-immunity remaining (0 = no immunity). */
+  /** Rounds of damage-immunity remaining (0 = not immune). */
   immunityRoundsLeft: number;
+  /**
+   * Current HP of each spirit in the side's roster (same order as the roster
+   * array).  Initialised empty; caller must populate before the first spin.
+   */
+  hp:    number[];
+  /**
+   * Max HP of each spirit.  Same order as `hp`.  Treated as read-only by
+   * the engine — only `revive_hp` effects write to `hp`, never to `maxHp`.
+   */
+  maxHp: number[];
 }
 
-/** Factory — fresh RoundState for a new match. */
+/** Factory — fresh RoundState for a new match (hp / maxHp left empty for caller). */
 export function createRoundState(): RoundState {
   return {
     usedRevive:         new Set<string>(),
     immunityRoundsLeft: 0,
+    hp:                 [],
+    maxHp:              [],
   };
 }
 
@@ -233,8 +261,21 @@ function evaluateSide(
   // Ensure non-zero damage when there was a hit
   if (totalDmg > 0 && Math.floor(totalDmg) === 0) totalDmg = 1;
 
-  // Architect (T1.1): dispatch into SkillResolver. Effects are descriptors
-  // only — actual HP / coin mutation will be wired by [The Actuary] in T1.2.
+  /**
+   * Post-resolve application is done here (not in SkillResolver) because:
+   *  - SkillResolver is a pure descriptor emitter; it must remain side-effect-free
+   *    on coin / dmg values so that replays and tests can inspect raw effects.
+   *  - SlotEngine owns the final numeric outputs; centralising the math here
+   *    makes overflow / clamp behaviour easy to audit in one place.
+   *
+   * Snapshot prevSideHp *before* calling the resolver so that on_death
+   * triggers can detect the alive→dead transition correctly.  The caller
+   * (evaluate) has already applied incoming damage to sideRoundState.hp
+   * before invoking evaluateSide, so this snapshot is the "current" HP
+   * after taking hits but before this round's skill effects fire.
+   */
+  const prevSideHp = (sideRoundState as SideRoundState).hp.slice();
+
   const skillCtx: SkillContext = {
     side,
     hitLines,
@@ -242,14 +283,72 @@ function evaluateSide(
     opponentRoster,
     sideRoundState:     sideRoundState     as SideRoundState,
     opponentRoundState: opponentRoundState as SideRoundState,
+    prevSideHp,
   };
-  const triggeredSkills = resolveSkills(skillCtx);
+  const triggeredSkills: ResolvedEffects = resolveSkills(skillCtx);
+
+  // ─── Apply resolved effects to this side's coin / damage totals ───────────
+  let pierceFormation = false;
+  let betRefunded     = false;
+  const hasOtherEffects = triggeredSkills.length > 1; // used for skill_resonance check
+
+  for (const fx of triggeredSkills) {
+    switch (fx.type) {
+      case 'dmg_bonus':
+        // Multiplicative bonus; value from config (e.g. 0.5 → +50% dmg).
+        totalDmg *= 1 + (fx.value ?? 0);
+        break;
+
+      case 'coin_bonus':
+        // Multiplicative bonus on coin output.
+        totalCoin *= 1 + (fx.value ?? 0);
+        break;
+
+      case 'skill_resonance':
+        // Bonus applies only when another ally skill also fired this round.
+        if (hasOtherEffects) {
+          totalDmg *= 1 + (fx.value ?? 0);
+        }
+        break;
+
+      case 'double_eval':
+        // Doubles both outputs in one pass — no recursive evaluation.
+        totalDmg  *= 2;
+        totalCoin *= 2;
+        break;
+
+      case 'pierce_formation':
+        // Flag forwarded to game layer; no in-engine numeric change.
+        pierceFormation = true;
+        break;
+
+      case 'refund_bet':
+        // Flag forwarded to game layer.
+        betRefunded = true;
+        break;
+
+      case 'dmg_immunity':
+      case 'halve_strongest_enemy':
+      case 'revive_hp':
+        // These effects already mutated round-state inside the resolver.
+        // Nothing left to do here.
+        break;
+
+      default: {
+        // Exhaustiveness guard — unknown types are silently ignored.
+        const _: never = fx.type;
+        void _;
+      }
+    }
+  }
 
   return {
     coinWon:  Math.floor(totalCoin),
     dmgDealt: Math.floor(totalDmg),
     hitLines,
     triggeredSkills,
+    pierceFormation,
+    betRefunded,
   };
 }
 
@@ -277,6 +376,17 @@ export class SlotEngine {
    * `roundStateA` / `roundStateB` are optional — callers that don't yet
    * track cross-round state (legacy simulation harness) get a fresh
    * scratch state; gameplay code should pass persistent instances.
+   *
+   * Immunity pipeline (T1.2):
+   *   1. evaluateSide(A) and evaluateSide(B) each independently resolve skills
+   *      and compute raw dmgDealt.
+   *   2. If side A holds immunityRoundsLeft > 0, side B's dmgDealt is clamped
+   *      to 0 (B cannot hurt A while A is shielded).
+   *   3. Symmetrically for side B's immunity vs A's damage.
+   *   4. Both counters are decremented by 1 (minimum 0) to consume one round.
+   *
+   * SKILL_RESOLVED is emitted only when running under a browser (window guard)
+   * so the Node-based simulation harness does not attempt to import Phaser.
    */
   evaluate(
     grid: number[][],
@@ -285,22 +395,62 @@ export class SlotEngine {
     betA: number,
     betB: number,
     roundStateA: RoundState = createRoundState(),
-    roundStateB: RoundState = createRoundState()
+    roundStateB: RoundState = createRoundState(),
+    round: number = 1
   ): EvaluationResult {
     const symIdsA = [...new Set(spiritsA.flatMap(s => s.injectsSymbols))];
     const symIdsB = [...new Set(spiritsB.flatMap(s => s.injectsSymbols))];
 
-    return {
-      grid,
-      sideA: evaluateSide(
-        grid, this.paylines, 'A', symIdsA, this.cfg.allSymbols, this.cfg.payoutBase, betA,
-        spiritsA, spiritsB, roundStateA, roundStateB
-      ),
-      sideB: evaluateSide(
-        grid, this.paylines, 'B', symIdsB, this.cfg.allSymbols, this.cfg.payoutBase, betB,
-        spiritsB, spiritsA, roundStateB, roundStateA
-      ),
-    };
+    const sideA = evaluateSide(
+      grid, this.paylines, 'A', symIdsA, this.cfg.allSymbols, this.cfg.payoutBase, betA,
+      spiritsA, spiritsB, roundStateA, roundStateB
+    );
+    const sideB = evaluateSide(
+      grid, this.paylines, 'B', symIdsB, this.cfg.allSymbols, this.cfg.payoutBase, betB,
+      spiritsB, spiritsA, roundStateB, roundStateA
+    );
+
+    // ── Immunity clamping: apply *after* both sides have resolved skills ──────
+    // A is immune → B's damage against A is zeroed.
+    if (roundStateA.immunityRoundsLeft > 0) {
+      sideB.dmgDealt = 0;
+    }
+    // B is immune → A's damage against B is zeroed.
+    if (roundStateB.immunityRoundsLeft > 0) {
+      sideA.dmgDealt = 0;
+    }
+    // Consume one immunity round on each side (clamp at 0).
+    roundStateA.immunityRoundsLeft = Math.max(0, roundStateA.immunityRoundsLeft - 1);
+    roundStateB.immunityRoundsLeft = Math.max(0, roundStateB.immunityRoundsLeft - 1);
+
+    // ── Emit SKILL_RESOLVED if any skill fired (browser-only guard) ───────────
+    const anySkills =
+      sideA.triggeredSkills.length > 0 ||
+      sideB.triggeredSkills.length > 0;
+
+    if (anySkills && typeof window !== 'undefined') {
+      // Lazy import keeps Node simulation harness free of Phaser dependencies.
+      void import('./EventBus').then(({ EventBus }) => {
+        void import('../config/EventNames').then(({ EventNames }) => {
+          if (sideA.triggeredSkills.length > 0) {
+            EventBus.emit(EventNames.SKILL_RESOLVED, {
+              side:    'A',
+              round,
+              effects: sideA.triggeredSkills,
+            });
+          }
+          if (sideB.triggeredSkills.length > 0) {
+            EventBus.emit(EventNames.SKILL_RESOLVED, {
+              side:    'B',
+              round,
+              effects: sideB.triggeredSkills,
+            });
+          }
+        });
+      });
+    }
+
+    return { grid, sideA, sideB };
   }
 
   /**

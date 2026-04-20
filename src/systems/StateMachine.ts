@@ -19,7 +19,7 @@ const TRANSITIONS: Readonly<Record<GameState, GameState[]>> = {
   GAME_IDLE:        ['GAME_SPINNING'],
   GAME_SPINNING:    ['GAME_EVALUATING'],
   GAME_EVALUATING:  ['GAME_IDLE', 'GAME_OVER'],
-  GAME_OVER:        ['MAIN_MENU'],
+  GAME_OVER:        ['MAIN_MENU', 'GAME_IDLE'],
 };
 
 /**

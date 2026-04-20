@@ -2,7 +2,8 @@ import Phaser from 'phaser';
 import { fsm } from '@/systems/StateMachine';
 import { EventBus } from '@/systems/EventBus';
 import { EventNames } from '@/config/EventNames';
-import { CANVAS_WIDTH, CANVAS_HEIGHT, REEL_COLS, REEL_ROWS } from '@/config/GameConfig';
+import { CANVAS_WIDTH, CANVAS_HEIGHT, REEL_COLS, REEL_ROWS, DEFAULT_BALANCE } from '@/config/GameConfig';
+import type { GameOverData } from '@/scenes/GameOverScene';
 import { COLORS, LAYOUT, FONT_SIZE, FONT } from '@/config/DesignTokens';
 import { PlayerPanel }  from '@/objects/ui/PlayerPanel';
 import { ReelGrid }     from '@/objects/ui/ReelGrid';
@@ -31,6 +32,7 @@ export class GameScene extends Phaser.Scene {
   panelA!:      PlayerPanel;
   panelB!:      PlayerPanel;
   spinButton!:  SpinButton;
+  battleLog!:   BattleLog;
   uiContainer!: Phaser.GameObjects.Container;
 
   // ─── Systems ─────────────────────────────────────────────────────────────────
@@ -48,31 +50,55 @@ export class GameScene extends Phaser.Scene {
   private hpB:      number[]    = [];
   private maxHpA:   number[]    = [];
   private maxHpB:   number[]    = [];
-  private balanceA  = 1000;
-  private balanceB  = 1000;
+  private balanceA  = DEFAULT_BALANCE;
+  private balanceB  = DEFAULT_BALANCE;
   private readonly betA = 100;
   private readonly betB = 100;
   private currentRound  = 0;
 
+  /** Signals that `_resetBattle()` must run once Phaser objects are live in `create()`. */
+  private _pendingRematch = false;
+
   constructor() { super({ key: 'GameScene' }); }
 
+  /**
+   * Called by Phaser before `create()`.
+   * When data contains `{ mode: 'rematch' }` the battle state is reset
+   * immediately so the scene re-uses the same Phaser objects.
+   *
+   * @param data - Optional scene-start payload. Pass `{ mode: 'rematch' }` to
+   *               trigger a full battle reset without rebuilding the scene.
+   */
+  init(data?: { mode?: string }): void {
+    if (data?.mode === 'rematch') {
+      // _resetBattle needs live Phaser objects — schedule it for after create()
+      this._pendingRematch = true;
+    }
+  }
+
+  /** @override Builds the full scene graph and wires all event listeners. */
   create(): void {
     this._drawBackground();
 
     this.uiContainer = this.add.container(0, 0);
 
-    this.panelA     = new PlayerPanel(this, 'A');
-    this.panelB     = new PlayerPanel(this, 'B');
-    this.reelGrid   = new ReelGrid(this);
-    this.spinButton = new SpinButton(this);
-    const log       = new BattleLog(this);
+    this.panelA      = new PlayerPanel(this, 'A');
+    this.panelB      = new PlayerPanel(this, 'B');
+    this.reelGrid    = new ReelGrid(this);
+    this.spinButton  = new SpinButton(this);
+    this.battleLog   = new BattleLog(this);
 
-    this.uiContainer.add([this.panelA, this.panelB, this.reelGrid, this.spinButton, log]);
+    this.uiContainer.add([this.panelA, this.panelB, this.reelGrid, this.spinButton, this.battleLog]);
 
     this._drawVsLabel();
     this._drawArenaBackground();
     this._initBattle();
     this._setupListeners();
+
+    if (this._pendingRematch) {
+      this._pendingRematch = false;
+      this._resetBattle();
+    }
   }
 
   // ─── Private ────────────────────────────────────────────────────────────────
@@ -147,6 +173,51 @@ export class GameScene extends Phaser.Scene {
     // Initial balance display
     EventBus.emit(EventNames.BALANCE_UPDATED, { side: 'A', coin: this.balanceA, bet: this.betA });
     EventBus.emit(EventNames.BALANCE_UPDATED, { side: 'B', coin: this.balanceB, bet: this.betB });
+  }
+
+  /**
+   * Resets all battle state for a rematch. Called when `init()` received
+   * `{ mode: 'rematch' }` and Phaser scene objects are already live.
+   *
+   * Coin balances are restored to the arcade-style starting amount.
+   * TODO(M4): hook into player wallet persistence layer
+   */
+  private _resetBattle(): void {
+    // Restore rosters to full HP
+    this.hpA = this.spiritsA.map(s => s.baseHp);
+    this.hpB = this.spiritsB.map(s => s.baseHp);
+    this.maxHpA = [...this.hpA];
+    this.maxHpB = [...this.hpB];
+
+    // Reset round counter
+    this.currentRound = 0;
+    EventBus.emit(EventNames.ROUND_UPDATED, { round: 0 });
+
+    // Reset coins to starting balance (arcade-style: every match begins at $1,000)
+    // TODO(M4): hook into player wallet persistence layer
+    this.balanceA = DEFAULT_BALANCE;
+    this.balanceB = DEFAULT_BALANCE;
+    EventBus.emit(EventNames.BALANCE_UPDATED, { side: 'A', coin: this.balanceA, bet: this.betA });
+    EventBus.emit(EventNames.BALANCE_UPDATED, { side: 'B', coin: this.balanceB, bet: this.betB });
+
+    // Re-populate formation grids with fresh HP values
+    const toUnit = (s: SpiritDef, hp: number) => ({
+      spiritName: s.name,
+      textureKey: (s as ExtSpiritDef).textureKey ?? '',
+      element:    s.element,
+      hp,
+      maxHp: hp,
+      alive: true,
+    });
+    this.panelA.grid.setUnits(this.spiritsA.map((s, i) => toUnit(s, this.hpA[i])));
+    this.panelB.grid.setUnits(this.spiritsB.map((s, i) => toUnit(s, this.hpB[i])));
+
+    // Clear battle log and restore button to idle state
+    this.battleLog.clear();
+    this.spinButton.setMode('idle');
+
+    // Return FSM to GAME_IDLE so spins are accepted again
+    fsm.transition('GAME_IDLE');
   }
 
   private _setupListeners(): void {
@@ -249,13 +320,34 @@ export class GameScene extends Phaser.Scene {
     if (!aAlive || !bAlive) {
       fsm.transition('GAME_OVER');
       this.spinButton.setMode('gameover');
-      const resultText = (!aAlive && !bAlive)
+
+      const winner: GameOverData['winner'] = (!aAlive && !bAlive) ? 'DRAW'
+        : (!aAlive ? 'B' : 'A');
+
+      const resultText = winner === 'DRAW'
         ? '★ DRAW — mutual destruction!'
-        : (!aAlive ? '★ PLAYER B WINS!' : '★ PLAYER A WINS!');
+        : `★ PLAYER ${winner} WINS!`;
       EventBus.emit(EventNames.BATTLE_LOG, {
         text:  resultText,
         color: COLORS.borderGold,
       });
+
+      // Hand off to GameOverScene with full match summary
+      const gameOverData: GameOverData = {
+        winner,
+        rounds:       this.currentRound,
+        hpRemainingA: this.hpA.reduce((s, v) => s + v, 0),
+        hpRemainingB: this.hpB.reduce((s, v) => s + v, 0),
+        hpMaxA:       this.maxHpA.reduce((s, v) => s + v, 0),
+        hpMaxB:       this.maxHpB.reduce((s, v) => s + v, 0),
+        coinA:        this.balanceA,
+        coinB:        this.balanceB,
+      };
+      // Brief delay so the final battle log line is readable before the overlay appears
+      this.time.delayedCall(1200, () => {
+        this.scene.launch('GameOverScene', gameOverData);
+      });
+
       return;
     }
 

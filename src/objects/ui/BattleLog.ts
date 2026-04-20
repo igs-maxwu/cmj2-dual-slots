@@ -24,9 +24,22 @@ export class BattleLog extends Phaser.GameObjects.Container {
     this._listenEvents();
   }
 
+  /**
+   * Appends a new entry to the battle log, keeping the last MAX_LINES visible.
+   * @param text  - The message to display.
+   * @param color - Numeric hex colour for the entry text.
+   */
   addEntry(text: string, color: number = COLORS.white): void {
     this.entries.push({ text, color });
     if (this.entries.length > MAX_LINES * 3) this.entries.shift();
+    this._render();
+  }
+
+  /**
+   * Clears all battle log entries, used when resetting for a rematch.
+   */
+  clear(): void {
+    this.entries = [];
     this._render();
   }
 

@@ -66,7 +66,7 @@ export class SpinButton extends Phaser.GameObjects.Container {
         this.bg.setFillStyle(COLORS.btnPressed);
         EventBus.emit(EventNames.SPIN_REQUESTED);
       } else if (this.mode === 'gameover') {
-        EventBus.emit(EventNames.SPIN_REQUESTED);
+        EventBus.emit(EventNames.REMATCH_REQUESTED);
       }
     });
     this.on(Phaser.Input.Events.POINTER_UP, () => {

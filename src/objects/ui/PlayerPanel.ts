@@ -1,10 +1,11 @@
 import Phaser from 'phaser';
-import { COLORS, LAYOUT, FONT_SIZE, FONT } from '@/config/DesignTokens';
+import { COLORS, LAYOUT, FONT_SIZE, FONT, TEAM, GOLD, RADIUS } from '@/config/DesignTokens';
 import { EventBus } from '@/systems/EventBus';
 import { EventNames } from '@/config/EventNames';
 import { FormationGrid } from './FormationGrid';
 import type { Side } from '@/systems/SlotEngine';
 import { CANVAS_HEIGHT } from '@/config/GameConfig';
+import { GoldFrame } from './design/GoldFrame';
 
 /**
  * [The Stylist] — Full side panel for one player.
@@ -27,29 +28,36 @@ export class PlayerPanel extends Phaser.GameObjects.Container {
   }
 
   private _build(): void {
-    const W            = LAYOUT.panelW;
-    const H            = CANVAS_HEIGHT;
-    const playerColor  = this.side === 'A' ? COLORS.playerA : COLORS.playerB;
-    const borderColor  = this.side === 'A' ? COLORS.borderA : COLORS.borderB;
-    const colorHex     = '#' + playerColor.toString(16).padStart(6, '0');
+    const W           = LAYOUT.panelW;
+    const H           = CANVAS_HEIGHT;
+    const teamColor   = this.side === 'A' ? TEAM.azure : TEAM.vermilion;
+    const teamHex     = '#' + teamColor.toString(16).padStart(6, '0');
 
-    // Panel background
-    this.add(
-      this.scene.add.rectangle(W / 2, H / 2, W, H, COLORS.bgPanel)
-        .setStrokeStyle(1, borderColor)
-    );
+    // Deep-sea gold cartouche background — full-height panel with large
+    // rounded corners. The frame draws its own drop-shadow, gold border
+    // and semi-transparent navy panel fill.
+    this.add(new GoldFrame(this.scene, W, H, { radius: RADIUS.lg }));
 
-    // Player label
+    // Team-colour banner behind the PLAYER label — a soft glow strip across
+    // the top of the panel that reads as "this side is 青龍 / 朱雀".
+    const banner = this.scene.add.graphics();
+    banner.fillStyle(teamColor, 0.35);
+    banner.fillRoundedRect(8, 8, W - 16, 40, RADIUS.md);
+    this.add(banner);
+
+    // Player label (team-tinted, serif)
     this.add(
       this.scene.add.text(W / 2, 22, `PLAYER ${this.side}`, {
-        fontSize: `${FONT_SIZE.md}px`, fontFamily: FONT.bold, color: colorHex,
+        fontSize: `${FONT_SIZE.md}px`, fontFamily: FONT.bold, color: teamHex,
+        stroke: '#051326', strokeThickness: 2,
       }).setOrigin(0.5, 0.5)
     );
 
-    // Divider
-    this.add(
-      this.scene.add.rectangle(W / 2, 38, W - 20, 1, borderColor).setAlpha(0.4)
-    );
+    // Gold hairline divider under the label
+    const divider = this.scene.add.graphics();
+    divider.fillStyle(GOLD.base, 0.6);
+    divider.fillRect(12, 50, W - 24, 1);
+    this.add(divider);
 
     // Formation grid (centred in panel, upper portion)
     const gridOffsetX = (W - LAYOUT.gridW) / 2;

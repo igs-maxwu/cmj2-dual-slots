@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
-import { COLORS, LAYOUT } from '@/config/DesignTokens';
+import { COLORS, LAYOUT, GOLD, SURF, RADIUS } from '@/config/DesignTokens';
 import { REEL_COLS, REEL_ROWS, CANVAS_WIDTH } from '@/config/GameConfig';
+import { GoldFrame } from './design/GoldFrame';
 
 /**
  * [The Stylist] — Visual container for the 4×5 reel grid.
@@ -55,21 +56,32 @@ export class ReelGrid extends Phaser.GameObjects.Container {
     const { reelTotalW, reelTotalH } = LAYOUT;
     const pad = 14;
 
-    const outer = this.scene.add.rectangle(
-      reelTotalW / 2, reelTotalH / 2,
-      reelTotalW + pad * 2, reelTotalH + pad * 2,
-      COLORS.bgPanel
-    ).setStrokeStyle(2, COLORS.borderGold);
-    this.add(outer);
+    // Gold cartouche wrapping the reel — uses dark inlay panel (almost
+    // black-navy) so symbols read as inlaid gems on a gold setting.
+    const frame = new GoldFrame(this.scene, reelTotalW + pad * 2, reelTotalH + pad * 2, {
+      radius:     RADIUS.lg,
+      panelColor: SURF.darkInlay.color,
+      panelAlpha: 0.95,
+    });
+    frame.x = -pad;
+    frame.y = -pad;
+    this.add(frame);
 
-    // Corner accent marks
-    const corners = [
-      [0, 0], [reelTotalW + pad * 2, 0],
-      [0, reelTotalH + pad * 2], [reelTotalW + pad * 2, reelTotalH + pad * 2],
+    // Four gold corner studs — echoes traditional cartouche corner rivets.
+    const studOffset = pad - 2;
+    const corners: Array<[number, number]> = [
+      [-studOffset, -studOffset],
+      [reelTotalW + studOffset, -studOffset],
+      [-studOffset, reelTotalH + studOffset],
+      [reelTotalW + studOffset, reelTotalH + studOffset],
     ];
     corners.forEach(([cx, cy]) => {
-      const dot = this.scene.add.rectangle(cx, cy, 8, 8, COLORS.borderGold);
-      this.add(dot);
+      const stud = this.scene.add.graphics();
+      stud.fillStyle(GOLD.base, 1);
+      stud.fillCircle(cx, cy, 4);
+      stud.fillStyle(GOLD.light, 0.9);
+      stud.fillCircle(cx - 1, cy - 1, 1.5);
+      this.add(stud);
     });
   }
 

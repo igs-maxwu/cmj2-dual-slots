@@ -3,6 +3,13 @@
  * Owns: payline generation, spin evaluation, damage distribution, RTP simulation.
  */
 
+import {
+  resolve as resolveSkills,
+  type ResolvedEffect,
+  type SkillContext,
+  type SideRoundState,
+} from './SkillResolver';
+
 // ─── Types ──────────────────────────────────────────────────────────────────
 
 export type Element = 'man' | 'pin' | 'sou' | 'honor' | 'wild';
@@ -62,7 +69,28 @@ export interface SideResult {
   coinWon:    number;
   dmgDealt:   number;
   hitLines:   HitLine[];
-  triggeredSkills: string[]; // skill IDs triggered this round
+  /** Normalized effects produced by SkillResolver this round (T1.2 will act on them). */
+  triggeredSkills: ResolvedEffect[];
+}
+
+/**
+ * Per-side cross-round state. Lives outside SideResult because it
+ * must persist between spins. T1.2 will expand this with more fields
+ * (buff stacks, cooldowns, etc.).
+ */
+export interface RoundState {
+  /** Spirit IDs that already burned their `once: true` revive trigger. */
+  usedRevive:         Set<string>;
+  /** Rounds of damage-immunity remaining (0 = no immunity). */
+  immunityRoundsLeft: number;
+}
+
+/** Factory — fresh RoundState for a new match. */
+export function createRoundState(): RoundState {
+  return {
+    usedRevive:         new Set<string>(),
+    immunityRoundsLeft: 0,
+  };
 }
 
 export interface HitLine {
@@ -162,7 +190,11 @@ function evaluateSide(
   spiritSymbolIds: number[],
   allSymbols: SymbolDef[],
   payoutBase: Record<string, number>,
-  bet: number
+  bet: number,
+  sideRoster: SpiritDef[],
+  opponentRoster: SpiritDef[],
+  sideRoundState: RoundState,
+  opponentRoundState: RoundState
 ): SideResult {
   const COLS = grid[0].length;
   const hitLines: HitLine[] = [];
@@ -201,11 +233,23 @@ function evaluateSide(
   // Ensure non-zero damage when there was a hit
   if (totalDmg > 0 && Math.floor(totalDmg) === 0) totalDmg = 1;
 
+  // Architect (T1.1): dispatch into SkillResolver. Effects are descriptors
+  // only — actual HP / coin mutation will be wired by [The Actuary] in T1.2.
+  const skillCtx: SkillContext = {
+    side,
+    hitLines,
+    sideRoster,
+    opponentRoster,
+    sideRoundState:     sideRoundState     as SideRoundState,
+    opponentRoundState: opponentRoundState as SideRoundState,
+  };
+  const triggeredSkills = resolveSkills(skillCtx);
+
   return {
     coinWon:  Math.floor(totalCoin),
     dmgDealt: Math.floor(totalDmg),
     hitLines,
-    triggeredSkills: [],
+    triggeredSkills,
   };
 }
 
@@ -230,21 +274,32 @@ export class SlotEngine {
 
   /**
    * Evaluate a pre-built grid (used in simulation and replays).
+   * `roundStateA` / `roundStateB` are optional — callers that don't yet
+   * track cross-round state (legacy simulation harness) get a fresh
+   * scratch state; gameplay code should pass persistent instances.
    */
   evaluate(
     grid: number[][],
     spiritsA: SpiritDef[],
     spiritsB: SpiritDef[],
     betA: number,
-    betB: number
+    betB: number,
+    roundStateA: RoundState = createRoundState(),
+    roundStateB: RoundState = createRoundState()
   ): EvaluationResult {
     const symIdsA = [...new Set(spiritsA.flatMap(s => s.injectsSymbols))];
     const symIdsB = [...new Set(spiritsB.flatMap(s => s.injectsSymbols))];
 
     return {
       grid,
-      sideA: evaluateSide(grid, this.paylines, 'A', symIdsA, this.cfg.allSymbols, this.cfg.payoutBase, betA),
-      sideB: evaluateSide(grid, this.paylines, 'B', symIdsB, this.cfg.allSymbols, this.cfg.payoutBase, betB),
+      sideA: evaluateSide(
+        grid, this.paylines, 'A', symIdsA, this.cfg.allSymbols, this.cfg.payoutBase, betA,
+        spiritsA, spiritsB, roundStateA, roundStateB
+      ),
+      sideB: evaluateSide(
+        grid, this.paylines, 'B', symIdsB, this.cfg.allSymbols, this.cfg.payoutBase, betB,
+        spiritsB, spiritsA, roundStateB, roundStateA
+      ),
     };
   }
 
@@ -257,10 +312,12 @@ export class SlotEngine {
     spiritsB: SpiritDef[],
     betA: number,
     betB: number,
-    rng: () => number = Math.random
+    rng: () => number = Math.random,
+    roundStateA: RoundState = createRoundState(),
+    roundStateB: RoundState = createRoundState()
   ): EvaluationResult {
     const grid = spinGrid(this.cfg.rows, this.cfg.cols, pool, rng);
-    return this.evaluate(grid, spiritsA, spiritsB, betA, betB);
+    return this.evaluate(grid, spiritsA, spiritsB, betA, betB, roundStateA, roundStateB);
   }
 
   /** Expose paylines for [The Illusionist] to draw win-line overlays. */

@@ -24,9 +24,27 @@ export const EventNames = {
   ROUND_UPDATED:    'ui:roundUpdated',     // { round }
   SKILL_TRIGGERED:  'ui:skillTriggered',   // { side, skillName }
 
+  // Skill pipeline (produced by [The Architect] SkillResolver, consumed in T1.2+)
+  SKILL_RESOLVED:   'skill:resolved',       // payload: SkillResolvedPayload
+
   // FX triggers (consumed by [The Illusionist])
   FX_WIN_CELEBRATION: 'fx:winCelebration',
   FX_REEL_STOP:       'fx:reelStop',
 } as const;
 
 export type EventName = typeof EventNames[keyof typeof EventNames];
+
+// ─── Payload types ───────────────────────────────────────────────────────────
+
+import type { ResolvedEffects } from '@/systems/SkillResolver';
+import type { Side } from '@/systems/SlotEngine';
+
+/** Payload emitted with EventNames.SKILL_RESOLVED after evaluateSide runs. */
+export interface SkillResolvedPayload {
+  /** Which side these effects belong to. */
+  side:    Side;
+  /** Round counter (1-indexed) when the skills fired. */
+  round:   number;
+  /** The resolved effects produced by SkillResolver.resolve(). */
+  effects: ResolvedEffects;
+}

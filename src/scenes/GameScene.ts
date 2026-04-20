@@ -218,16 +218,21 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
-    // Win line flash over the reel grid
-    const allHits = [...sideA.hitLines, ...sideB.hitLines];
-    if (allHits.length > 0) {
-      const paylines = this.engine.getPaylines();
-      const paths    = allHits.map(h => paylines[h.lineIndex]);
+    // Win line flash — A=blue, B=red, drawn separately so colours are distinct
+    const paylines = this.engine.getPaylines();
+    const origin   = { x: this.reelOriginX, y: this.reelOriginY };
+    if (sideA.hitLines.length > 0) {
       this.fxManager.winLineFlash(
-        paths,
-        { x: this.reelOriginX, y: this.reelOriginY },
-        LAYOUT.reelCellW, LAYOUT.reelCellH, LAYOUT.reelCellGap,
-        COLORS.borderGold
+        sideA.hitLines.map(h => paylines[h.lineIndex]),
+        origin, LAYOUT.reelCellW, LAYOUT.reelCellH, LAYOUT.reelCellGap,
+        COLORS.playerA   // blue
+      );
+    }
+    if (sideB.hitLines.length > 0) {
+      this.fxManager.winLineFlash(
+        sideB.hitLines.map(h => paylines[h.lineIndex]),
+        origin, LAYOUT.reelCellW, LAYOUT.reelCellH, LAYOUT.reelCellGap,
+        COLORS.playerB   // red
       );
     }
 

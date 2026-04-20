@@ -13,6 +13,9 @@ dist/
 # TypeScript build info
 *.tsbuildinfo
 
+# Original high-res spirit images (backed up locally, not needed in repo)
+public/assets/spirits_original/
+
 # OS files
 .DS_Store
 Thumbs.db

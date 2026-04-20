@@ -10,11 +10,11 @@
 
 | Agent | 職能 | 核心產出 | Claude Design 使用 | 禁令摘要 |
 |-------|------|----------|--------------------|---------|
-| [The Visionary]   | 遊戲設計 / 世界觀 / 玩家循環 | GDD, Core Loop, Thematic Brief | ✅ 概念板 / 簡報投影片 | 不寫代碼、不脫離技術現實 |
+| [The Visionary]   | 遊戲設計 / 世界觀 / 玩家循環 | GDD, Core Loop, Thematic Brief | ✅ 概念板 / 簡報投影片 → Handoff | 不寫代碼、不脫離技術現實 |
 | [The Architect]   | 系統架構 / TypeScript / Phaser 3 | EventBus, FSM, Directory Skeleton | — | 不寫業務邏輯、不處理視覺細節 |
 | [The Actuary]     | 遊戲數學 / 機率模型 / 對戰平衡 | EvaluationResult, GameConfig JSON | — | 不硬編碼、不處理輸入 |
-| [The Stylist]     | UI/UX / 佈局 / 組件架構 | PlayerPanel, SlotMachine Container | ✅ **必須**：每個新場景先 mockup | 不寫絕對座標、不處理遊戲狀態 |
-| [The Illusionist] | 視覺特效 / 動畫 / Game Juice | Promise-wrapped FX, Particles | ✅ FX 分鏡板 / 關鍵影格 | 不自行決定數值與時序 |
+| [The Stylist]     | UI/UX / 佈局 / 組件架構 | PlayerPanel, SlotMachine Container | ✅ **必須**：mockup → **Handoff Bundle → Claude Code** | 不寫絕對座標、不處理遊戲狀態 |
+| [The Illusionist] | 視覺特效 / 動畫 / Game Juice | Promise-wrapped FX, Particles | ✅ FX 分鏡板 → Handoff 規格 | 不自行決定數值與時序 |
 | [The Sculptor]    | 2D→3D Q版公仔美術製作 / AI 繪圖提示詞 | Chibi 3D Spirit PNGs (512px) | ✅ 風格一致性看板 / 角色展示板 | 不改比例規則、不自行決定角色動作 |
 | [The Auditor]     | QA / 代碼審查 / 性能監測 | Bug Report, Simulation Results | — | 不撰寫功能代碼、不妥協 |
 
@@ -38,7 +38,9 @@
 - **Claude Design 使用規範**：
   - 概念板用途：玩法流程圖、氛圍 mood board、場景情緒參考圖
   - 簡報用途：將 GDD 重點轉為投影片，供 Owner / 週報使用
-  - 產出格式：匯出 PDF 或 PPTX，附於 GDD 文件旁；連結記錄於 `DEVELOPMENT_LOG.md`
+  - **Handoff 路徑**（個人原型驗證）：Design 完成後 → 點「Handoff to Claude Code」→ Claude Code 直接接收規格實作，不需手動截圖或 GitHub
+  - **Export 路徑**（團隊規格流程）：匯出 HTML / PPTX / PDF → 進 repo 當規格附件 → 工程師用 Claude Code 實作
+  - 產出連結記錄於 `DEVELOPMENT_LOG.md`
 
 ### 4. 協作協議
 - **與 [The Actuary]**：Visionary 提出機制概念（如「燃燒技能」），Actuary 負責算出每秒扣多少血
@@ -130,23 +132,30 @@
 Step 1｜輸入準備
   - 從 src/config/DesignTokens.ts 提取現有色彩 tokens（COLORS, FONT, LAYOUT）
   - 確認場景功能需求（來自 [The Visionary] 的 GDD 或 Owner 指令）
+  - 可附上現有 spirit PNG + 遊戲截圖作為美術風格參考
 
 Step 2｜Claude Design Mockup（claude.ai/design）
-  - 輸入色彩 tokens + 場景功能需求
+  - 輸入色彩 tokens + 場景功能需求 + 美術參考圖
   - 生成 1280×720 的場景 mockup（至少提供 1 個方案，建議 2~3 個變體）
   - 確認：資訊層次、元素間距、互動區域大小、色彩對比度
 
 Step 3｜Owner 確認
-  - 將 mockup 匯出為圖片或 URL，呈給 Owner 審閱
+  - 將 mockup 截圖或 URL 呈給 Owner 審閱（可在 Claude Code 對話中貼圖確認）
   - 記錄確認結果於 DEVELOPMENT_LOG.md
   - 未經確認禁止進入 Step 4
 
-Step 4｜Phaser 實作
-  - 以確認後的 mockup 為唯一視覺依據
-  - 從 mockup 中提取比例數值，換算為 DesignTokens 中的相對係數
+Step 4A｜Handoff Bundle → Claude Code（推薦，個人原型驗證）
+  ★ 直接在 Claude Design 點「Handoff to Claude Code」
+  ★ Claude Code 自動接收設計規格（色彩、間距、元件尺寸），直接生成 Phaser 程式碼
+  ★ 不需要手動截圖、不需要 GitHub 中轉，設計→代碼閉環
+
+Step 4B｜Export → Repo（團隊規格流程）
+  - 匯出 HTML / PPTX / PDF → 存入 repo docs/ 資料夾當規格附件
+  - Claude Code Routines 可監聽 repo 事件自動觸發實作
+  - 適合「設計稿進 repo → 團隊審 → 工程師實作」流程
 
 Step 5｜實作驗收
-  - 截圖實作結果，與 mockup 並排比對
+  - 截圖實作結果，與 mockup 並排比對（可貼回 Claude Code 對話讓 Claude 確認）
   - 主要元素位置誤差需在 ±5px 以內
 ```
 
@@ -196,7 +205,14 @@ Step 2｜Claude Design 分鏡板（claude.ai/design）
 
 Step 3｜[The Stylist] 確認
   - 確認 FX 覆蓋區域不衝突 UI 元素
-  - 確認完畢後方可進入 Phaser 實作
+  - 確認完畢後選擇實作路徑：
+
+Step 4A｜Handoff Bundle → Claude Code（推薦）
+  ★ 點「Handoff to Claude Code」→ Claude Code 接收 FX 時序規格直接實作
+  ★ 分鏡板的影格時間、Easing、覆蓋區域自動帶入，不需手動轉譯
+
+Step 4B｜手動實作
+  - 以分鏡板為規格依據，在 FxManager.ts 中撰寫 Phaser Tweens
 ```
 
 **觸發門檻：** 下列情況必須執行分鏡板流程：
@@ -332,32 +348,31 @@ Step 4｜正式生圖 & 規格驗收
 ## Agent 協作矩陣
 
 ```
-                    ┌─────────────────────────────────────────┐
-                    │         claude.ai/design                │
-                    │  概念板 / mockup / 分鏡板 / 展示投影片    │
-                    └──┬──────────┬──────────┬───────────────┘
-                       │          │          │
-                  概念板輸出   UI mockup  FX分鏡板  Style Board
+                    ┌──────────────────────────────────────────────┐
+                    │            claude.ai/design                  │
+                    │   概念板 / mockup / 分鏡板 / 展示投影片        │
+                    └──┬──────────┬──────────┬──────────┬─────────┘
+                       │          │          │          │
+                  概念板輸出  UI mockup  FX分鏡板  Style Board
                        │          │          │          │
                        ▼          ▼          ▼          ▼
 [The Visionary] ── GDD ──► [The Stylist] [The Illusionist] [The Sculptor]
        │           角色定位        │              │              │
-       │              │           │              │         Spirit PNG
-       │              └───────────┘              │         public/assets/
-       │          (Stylist confirms      (Stylist confirms     /spirits/
-       │           mockup before code)   FX coverage)         │
-       ▼                                                       │
-[The Orchestrator] ──── 任務分派 ──────────────────────────────┘
-       │
-       ▼
-[The Architect]                                        [The Auditor]
-  提供: EventBus, FSM, Containers                       審核: 所有代碼
-  接收: GDD 技術可行性確認                               凍結: Critical Bug
-       │                                                        ▲
-       ├──── Interface 定義 ──── [The Actuary]                  │
-       │     提供: EvaluationResult                             │
-       │     接收: Grid Array + Visionary 機制規格              │
-       │           │                                           │
+       │              │      ★HANDOFF★       ★HANDOFF★     Spirit PNG
+       │              │           │              │         public/assets/
+       │              └───────────┘              │              /spirits/
+       │              Owner 確認後               │              │
+       ▼         Handoff Bundle ──────────────── ┼ ─────────────┘
+[The Orchestrator] ──── 任務分派                 │
+       │                                         ▼
+       ▼                              ┌──────────────────┐
+[The Architect]                       │  Claude Code CLI  │  ◄── 接收 Handoff Bundle
+  提供: EventBus, FSM, Containers     │  自動實作 Phaser   │       設計規格直接轉代碼
+  接收: GDD 技術可行性確認             └──────────────────┘
+       │                                                        ▲ [The Auditor]
+       ├──── Interface 定義 ──── [The Actuary]                  │  審核所有代碼
+       │     提供: EvaluationResult                             │  凍結 Critical Bug
+       │           │                                            │
        │           ├── 中獎強度 ──► [The Illusionist]          │
        │           │                提供: Promise FX           │
        │           │                                           │
@@ -367,13 +382,21 @@ Step 4｜正式生圖 & 規格驗收
                                          全體 Agent ─────────► │
 ```
 
+### Claude Design × Claude Code 整合路徑
+
+| 路徑 | 適用情境 | 操作方式 |
+|------|---------|---------|
+| ★ **Handoff Bundle**（推薦） | 個人原型驗證、快速迭代 | Design 完成 → 點「Handoff to Claude Code」→ Claude Code 自動接規格 |
+| **Export → Repo** | 團隊規格流程、週報附件 | 匯出 HTML/PPTX/PDF → 進 repo docs/ → 工程師 Claude Code 實作 |
+| **截圖回 Claude Code** | 即時審閱、快速確認 | Owner 截圖貼回 Claude Code 對話，Claude 肉眼確認再 code |
+
 ### Claude Design 使用時機速查
 
-| 情境 | 執行 Agent | Claude Design 產出物 |
-|------|-----------|-------------------|
-| 新遊戲機制 / 玩法提案 | [The Visionary] | 概念板 / 流程圖 / 簡報投影片 |
-| 新場景 UI（DraftScene 等） | [The Stylist] | 1280×720 場景 mockup（**必須**，Owner 確認後才 code） |
-| 現有場景重大改版 | [The Stylist] | 改版前後對比 mockup |
-| 全螢幕 / 多階段 FX | [The Illusionist] | FX 分鏡板（Start→Peak→End 3格） |
-| 新 spirit 角色製作 | [The Sculptor] | 風格一致性看板 + 試色方案 |
-| 週報 / Owner 提案 | [The Visionary] 或 [The Sculptor] | PPTX 投影片 |
+| 情境 | 執行 Agent | 產出物 | 接手路徑 |
+|------|-----------|--------|---------|
+| 新遊戲機制 / 玩法提案 | [The Visionary] | 概念板 / 流程圖 / 簡報 | Export PPTX → 週報 |
+| 新場景 UI（DraftScene 等） | [The Stylist] | 1280×720 場景 mockup（**必須**） | ★ Handoff → Claude Code |
+| 現有場景重大改版 | [The Stylist] | 改版前後對比 mockup | ★ Handoff → Claude Code |
+| 全螢幕 / 多階段 FX | [The Illusionist] | FX 分鏡板（Start→Peak→End） | ★ Handoff → Claude Code |
+| 新 spirit 角色製作 | [The Sculptor] | 風格一致性看板 + 試色方案 | Export → 提供給 AI 繪圖工具 |
+| 週報 / Owner 提案 | [The Visionary] 或 [The Sculptor] | PPTX 投影片 | Export PPTX → 直接用 |

@@ -7,9 +7,10 @@ export const EventNames = {
   FSM_CHANGE_STATE: 'fsm:changeState',
 
   // Game flow
-  SPIN_REQUESTED:   'game:spinRequested',
-  SPIN_STARTED:     'game:spinStarted',
-  SPIN_STOPPED:     'game:spinStopped',
+  SPIN_REQUESTED:    'game:spinRequested',
+  SPIN_STARTED:      'game:spinStarted',
+  SPIN_STOPPED:      'game:spinStopped',
+  REMATCH_REQUESTED: 'game:rematchRequested',
 
   // Result pipeline
   WIN_RESULT:       'result:win',

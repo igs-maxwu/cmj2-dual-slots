@@ -10,7 +10,7 @@ const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
   width: CANVAS_WIDTH,
   height: CANVAS_HEIGHT,
-  backgroundColor: '#1a1a2e',
+  backgroundColor: '#061a33',   // --sea-abyss
   scene: [BootScene, PreloadScene, MainMenuScene, GameScene, GameOverScene],
   parent: document.body,
   scale: {
@@ -19,4 +19,15 @@ const config: Phaser.Types.Core.GameConfig = {
   },
 };
 
-new Phaser.Game(config);
+/**
+ * Gate Phaser startup behind `document.fonts.ready` so the calligraphy,
+ * Cinzel and Noto Serif faces are decoded before the first text paint.
+ * Phaser WebGL caches text textures on first render — if the face is not
+ * loaded at that moment, the fallback is burned in and never refreshes.
+ */
+const bootFonts = (): Promise<void> =>
+  document.fonts && typeof document.fonts.ready?.then === 'function'
+    ? document.fonts.ready.then(() => void 0)
+    : Promise.resolve();
+
+bootFonts().then(() => new Phaser.Game(config));

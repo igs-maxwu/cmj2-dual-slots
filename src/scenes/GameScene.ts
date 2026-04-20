@@ -5,7 +5,7 @@ import { EventNames } from '@/config/EventNames';
 import type { SkillResolvedPayload } from '@/config/EventNames';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, REEL_COLS, REEL_ROWS, DEFAULT_BALANCE } from '@/config/GameConfig';
 import type { GameOverData } from '@/scenes/GameOverScene';
-import { COLORS, LAYOUT, FONT_SIZE, FONT } from '@/config/DesignTokens';
+import { COLORS, LAYOUT, FONT_SIZE, FONT, SEA } from '@/config/DesignTokens';
 import { PlayerPanel }  from '@/objects/ui/PlayerPanel';
 import { ReelGrid }     from '@/objects/ui/ReelGrid';
 import { ReelSpinner }  from '@/objects/ui/ReelSpinner';
@@ -105,8 +105,30 @@ export class GameScene extends Phaser.Scene {
 
   // ─── Private ────────────────────────────────────────────────────────────────
 
+  /**
+   * Paints the deep-sea backdrop: abyss base + vertical gradient up to the
+   * water-light band, with a faint caustic highlight across the upper third.
+   * Placeholder for the eventual painted hero illustration (see handoff
+   * README: "全畫面都是插畫式深海背景").
+   */
   private _drawBackground(): void {
-    this.add.rectangle(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2, CANVAS_WIDTH, CANVAS_HEIGHT, COLORS.bg);
+    // Base fill (darkest: sea-abyss)
+    this.add.rectangle(
+      CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2,
+      CANVAS_WIDTH, CANVAS_HEIGHT,
+      SEA.abyss,
+    );
+
+    // Vertical gradient: top abyss → bottom deep/mid. Uses a Graphics quad
+    // with fillGradientStyle so Phase 1 ships without a background texture.
+    const g = this.add.graphics();
+    g.fillGradientStyle(SEA.abyss, SEA.abyss, SEA.mid, SEA.deep, 1);
+    g.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+    // Caustic light band near the top — faint horizontal highlight at ~32% height
+    const caustic = this.add.graphics();
+    caustic.fillGradientStyle(SEA.light, SEA.light, SEA.abyss, SEA.abyss, 0.22);
+    caustic.fillRect(0, 0, CANVAS_WIDTH, Math.round(CANVAS_HEIGHT * 0.32));
   }
 
   private _drawArenaBackground(): void {

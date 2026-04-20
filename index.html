@@ -1,16 +1,56 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Dual Slots Battle</title>
+    <title>雀靈戰記 · Dual Slots Battle</title>
+
+    <!-- Design-system typography: calligraphy hero + Noto TC + Cinzel numbers -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&family=Noto+Serif+TC:wght@400;600;700;900&family=Noto+Sans+TC:wght@300;400;500;700;900&family=Cinzel:wght@600;800&display=swap"
+    />
+
     <style>
       * { margin: 0; padding: 0; box-sizing: border-box; }
-      body { background: #000; display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
+      body {
+        background: #061a33;
+        font-family: 'Noto Sans TC', 'PingFang TC', sans-serif;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        overflow: hidden;
+      }
       canvas { display: block; }
+
+      /* Pre-warm the font metrics cache so Phaser's first text paint uses the
+         calligraphy faces, not the fallback. The browser skips shaping for
+         faces that have not been requested by any DOM node. */
+      #font-preheat {
+        position: absolute;
+        left: -9999px;
+        top: -9999px;
+        visibility: hidden;
+        pointer-events: none;
+      }
+      #font-preheat .f1 { font-family: 'Ma Shan Zheng', serif; }
+      #font-preheat .f2 { font-family: 'ZCOOL KuaiLe', serif; }
+      #font-preheat .f3 { font-family: 'Noto Serif TC', serif; font-weight: 900; }
+      #font-preheat .f4 { font-family: 'Noto Sans TC', sans-serif; font-weight: 700; }
+      #font-preheat .f5 { font-family: 'Cinzel', serif; font-weight: 800; }
     </style>
   </head>
   <body>
+    <div id="font-preheat" aria-hidden="true">
+      <span class="f1">雀靈戰記</span>
+      <span class="f2">雀靈戰記</span>
+      <span class="f3">雀靈戰記</span>
+      <span class="f4">雀靈戰記</span>
+      <span class="f5">MEGA WIN 0123456789</span>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

@@ -30,6 +30,15 @@ export class SpiritRegistry {
   getAllSymbols(): SymbolDef[] { return this.symbols; }
 
   /**
+   * Returns the display name of the skill owned by the given spirit,
+   * or undefined if the spirit or skill is not found.
+   */
+  getSkillName(spiritId: string): string | undefined {
+    const s = this.spirits.get(spiritId);
+    return s?.skill?.name as string | undefined;
+  }
+
+  /**
    * Validate a player's roster for entry.
    * @throws if the spirit count is below MIN_SPIRITS.
    */

@@ -36,6 +36,23 @@ export class FormationGrid extends Phaser.GameObjects.Container {
 
   // ─── Public API ────────────────────────────────────────────────────────────
 
+  /**
+   * Returns the world-space center {x, y} for the unit cell at the given
+   * roster index (0-based). Used by [The Illusionist] to anchor skill FX.
+   * Returns null when the index is out of range.
+   */
+  getPortraitWorldXY(index: number): { x: number; y: number } | null {
+    const cell = this.unitCells[index];
+    if (!cell) return null;
+    // cell.x/y are relative to this container; walk up to scene coordinates.
+    const wx = this.x + cell.x;
+    const wy = this.y + cell.y;
+    // The container itself sits inside a PlayerPanel container — callers must
+    // add the PlayerPanel's world position. We expose the grid-local coords
+    // here; GameScene adds the panel offset when calling.
+    return { x: wx, y: wy };
+  }
+
   /** Populate grid from an array of unit states (3–5 entries). */
   setUnits(units: UnitState[]): void {
     this.states = units;

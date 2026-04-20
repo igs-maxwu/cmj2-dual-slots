@@ -2,6 +2,7 @@ import Phaser from 'phaser';
 import { fsm } from '@/systems/StateMachine';
 import { EventBus } from '@/systems/EventBus';
 import { EventNames } from '@/config/EventNames';
+import type { SkillResolvedPayload } from '@/config/EventNames';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, REEL_COLS, REEL_ROWS, DEFAULT_BALANCE } from '@/config/GameConfig';
 import type { GameOverData } from '@/scenes/GameOverScene';
 import { COLORS, LAYOUT, FONT_SIZE, FONT } from '@/config/DesignTokens';
@@ -12,6 +13,7 @@ import { SpinButton }   from '@/objects/ui/SpinButton';
 import { BattleLog }    from '@/objects/ui/BattleLog';
 import { FxManager }    from '@/systems/FxManager';
 import { registry }     from '@/systems/SpiritRegistry';
+import type { ResolvedEffect } from '@/systems/SkillResolver';
 import {
   SlotEngine, buildSymbolPool,
   type SpiritDef, type PoolSymbol, type EvaluationResult, type Side,
@@ -221,8 +223,71 @@ export class GameScene extends Phaser.Scene {
   }
 
   private _setupListeners(): void {
-    EventBus.on(EventNames.SPIN_REQUESTED, this._onSpinRequested, this);
+    EventBus.on(EventNames.SPIN_REQUESTED,  this._onSpinRequested,   this);
+    EventBus.on(EventNames.SKILL_RESOLVED,  this._onSkillResolved,   this);
     this.events.on(Phaser.Scenes.Events.SHUTDOWN, this._cleanup, this);
+  }
+
+  /**
+   * Returns the world-space anchor for a spirit's portrait cell, used to
+   * position skill-trigger FX. Searches the roster for the matching spiritId
+   * and delegates to FormationGrid.getPortraitWorldXY().
+   */
+  private _getSpiritAnchor(spiritId: string, side: Side): { x: number; y: number } | null {
+    const roster  = side === 'A' ? this.spiritsA : this.spiritsB;
+    const panel   = side === 'A' ? this.panelA   : this.panelB;
+    const idx     = roster.findIndex(s => s.id === spiritId);
+    if (idx < 0) return null;
+
+    const gridLocal = panel.grid.getPortraitWorldXY(idx);
+    if (!gridLocal) return null;
+
+    // panel.x is the PlayerPanel container's scene-space offset
+    return { x: panel.x + gridLocal.x, y: panel.y + gridLocal.y };
+  }
+
+  /**
+   * Handles SKILL_RESOLVED: plays a pill-popup + avatar flash per effect,
+   * and appends a BattleLog entry for each triggered skill.
+   * Effects on the same spirit are sequenced 120 ms apart; all spirits run
+   * in parallel. Intentionally non-blocking — spin flow does not await this.
+   */
+  private _onSkillResolved(payload: SkillResolvedPayload): void {
+    const { side, effects } = payload;
+    const sideColor = side === 'A' ? COLORS.playerA : COLORS.playerB;
+
+    // Group effects by spiritId so same-spirit effects are staggered.
+    const bySpirit = new Map<string, ResolvedEffect[]>();
+    for (const effect of effects) {
+      if (!bySpirit.has(effect.spiritId)) bySpirit.set(effect.spiritId, []);
+      bySpirit.get(effect.spiritId)!.push(effect);
+    }
+
+    // For each spirit, run its effects sequentially with 120 ms stagger.
+    // All spirits fire in parallel (Promise.all-equivalent fire-and-forget).
+    for (const [spiritId, spiritEffects] of bySpirit) {
+      const anchor = this._getSpiritAnchor(spiritId, side);
+      if (!anchor) continue;
+
+      // Fire-and-forget async chain for this spirit's effects.
+      (async () => {
+        for (const effect of spiritEffects) {
+          this.fxManager.playSkillTrigger(effect, anchor);
+          // BattleLog entry per effect
+          const skillName  = registry.getSkillName(spiritId) ?? effect.type;
+          const spiritName = registry.getSpirit(spiritId)?.name ?? spiritId;
+          const valueStr   = effect.value !== undefined
+            ? ` (+${Math.round(effect.value * 100)}%)`
+            : '';
+          EventBus.emit(EventNames.BATTLE_LOG, {
+            text:  `${side} ${spiritName} · ${skillName}${valueStr}`,
+            color: sideColor,
+          });
+          // Stagger next effect on the same spirit by 120 ms
+          await new Promise<void>(r => this.time.delayedCall(120, r));
+        }
+      })();
+    }
   }
 
   private _onSpinRequested(): void {
@@ -374,6 +439,7 @@ export class GameScene extends Phaser.Scene {
 
   private _cleanup(): void {
     EventBus.off(EventNames.SPIN_REQUESTED, this._onSpinRequested, this);
+    EventBus.off(EventNames.SKILL_RESOLVED, this._onSkillResolved, this);
     EventBus.off(EventNames.ROUND_UPDATED,  undefined, this);
     this.reelSpinner?.destroy();
   }

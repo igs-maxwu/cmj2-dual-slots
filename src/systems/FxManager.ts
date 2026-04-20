@@ -3,6 +3,8 @@ import { EventBus } from './EventBus';
 import { EventNames } from '@/config/EventNames';
 import { COLORS, FONT_SIZE, FONT } from '@/config/DesignTokens';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/config/GameConfig';
+import type { ResolvedEffect } from '@/systems/SkillResolver';
+import { registry } from '@/systems/SpiritRegistry';
 
 /**
  * [The Illusionist] — All game-feel effects, Promise-wrapped for sequencing.
@@ -174,6 +176,98 @@ export class FxManager {
         duration:   600,
         ease:       'Back.easeOut',
         onComplete: () => resolve(),
+      });
+    });
+  }
+
+  // ─── Skill Trigger FX ────────────────────────────────────────────────────────
+
+  /**
+   * Generic "skill fired" confirmation: a text pill pops up above the spirit
+   * portrait anchor, then fades away. Simultaneously flashes the portrait tint.
+   *
+   * Timeline (total ~810 ms):
+   *   0 ms   — pill spawns at scale 0.3, alpha 0 above anchor
+   *   80 ms  — ease-out expand to scale 1, alpha 1  [pop-in]
+   *   530 ms — hold at full opacity
+   *   810 ms — fade out + drift upward 12 px        [fade-out, 280 ms]
+   *
+   * The portrait tint flash runs in parallel (120 ms, independent).
+   * Returns a Promise that resolves when the pill animation finishes.
+   */
+  async playSkillTrigger(
+    effect:    ResolvedEffect,
+    anchor:    { x: number; y: number },
+    portrait?: Phaser.GameObjects.GameObject,
+  ): Promise<void> {
+    const sideColor = effect.side === 'A' ? COLORS.playerA : COLORS.playerB;
+    const label     = registry.getSkillName(effect.spiritId) ?? effect.type;
+
+    // ── Pill background ──────────────────────────────────────────────────────
+    const pillW = Math.min(label.length * 9 + 20, 160);
+    const pillH = 22;
+    const pillX = anchor.x;
+    const pillY = anchor.y - 36;   // float above the portrait center
+
+    const bg = this.scene.add.graphics().setDepth(110);
+    const drawBg = (alpha: number) => {
+      bg.clear();
+      bg.fillStyle(sideColor, alpha * 0.85);
+      bg.fillRoundedRect(-pillW / 2, -pillH / 2, pillW, pillH, 6);
+    };
+    drawBg(1);
+    bg.setPosition(pillX, pillY).setScale(0.3).setAlpha(0);
+
+    const txt = this.scene.add.text(pillX, pillY, label, {
+      fontSize:        `${FONT_SIZE.xs}px`,
+      fontFamily:      FONT.bold,
+      color:           '#ffffff',
+      stroke:          '#000000',
+      strokeThickness: 1,
+    }).setOrigin(0.5, 0.5).setDepth(111).setScale(0.3).setAlpha(0);
+
+    // ── Portrait tint flash (fire-and-forget, 120 ms) ────────────────────────
+    if (portrait && (portrait as unknown as Phaser.GameObjects.Image).setTint) {
+      const tintable = portrait as unknown as Phaser.GameObjects.Image;
+      tintable.setTint(sideColor);
+      this.scene.time.delayedCall(120, () => {
+        if (tintable.active) tintable.clearTint();
+      });
+    }
+
+    // ── Pop-in (0 → 80 ms) ───────────────────────────────────────────────────
+    await new Promise<void>(resolve => {
+      this.scene.tweens.add({
+        targets:    [bg, txt],
+        scaleX:     1,
+        scaleY:     1,
+        alpha:      1,
+        duration:   80,
+        ease:       'Back.easeOut',
+        onUpdate:   () => drawBg(bg.alpha),
+        onComplete: () => resolve(),
+      });
+    });
+
+    // ── Hold (80 → 530 ms, 450 ms dwell) ────────────────────────────────────
+    await new Promise<void>(resolve => {
+      this.scene.time.delayedCall(450, () => resolve());
+    });
+
+    // ── Fade-out + upward drift (530 → 810 ms, 280 ms) ──────────────────────
+    await new Promise<void>(resolve => {
+      this.scene.tweens.add({
+        targets:    [bg, txt],
+        y:          '-=12',
+        alpha:      0,
+        duration:   280,
+        ease:       'Cubic.easeIn',
+        onUpdate:   () => drawBg(bg.alpha),
+        onComplete: () => {
+          bg.destroy();
+          txt.destroy();
+          resolve();
+        },
       });
     });
   }

@@ -77,6 +77,12 @@ export class DraftScene extends Phaser.Scene {
     this._buildStatusBar();
     this._buildGoButton();
     this._refreshUI();
+
+    // Bridge listener: HTML config panel can pre-fill selections and auto-start.
+    EventBus.on(EventNames.DRAFT_CONFIG_OVERRIDE, this._onConfigOverride, this);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      EventBus.off(EventNames.DRAFT_CONFIG_OVERRIDE, this._onConfigOverride, this);
+    });
   }
 
   // ---------------------------------------------------------------------------
@@ -272,6 +278,21 @@ export class DraftScene extends Phaser.Scene {
     const canGo = this._canGo();
     this.goBtnLabel?.setText(canGo ? 'START BATTLE!' : 'SELECT 5 EACH TO START');
     this._drawGoBg(false);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Private: bridge override (HTML config panel → DraftScene)
+  // ---------------------------------------------------------------------------
+
+  /** Called when the HTML panel emits DRAFT_CONFIG_OVERRIDE via applyConfig(). */
+  private _onConfigOverride(payload: { selectedA: number[]; selectedB: number[] }): void {
+    this.selectedA = new Set(payload.selectedA.slice(0, MAX_PICKS));
+    this.selectedB = new Set(payload.selectedB.slice(0, MAX_PICKS));
+    this._refreshUI();
+    if (this._canGo()) {
+      // Small delay so the Phaser frame can repaint the check-marks before transition.
+      this.time.delayedCall(80, () => this._onGo());
+    }
   }
 
   // ---------------------------------------------------------------------------

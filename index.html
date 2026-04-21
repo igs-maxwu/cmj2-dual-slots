@@ -214,6 +214,15 @@
 
       <!-- Apply button -->
       <button class="cp-btn go" onclick="cpApplyAndStart()">APPLY &amp; START BATTLE</button>
+
+      <!-- Test plan -->
+      <div style="margin-top:10px;font-size:11px;color:#4a6a8a;line-height:1.7;">
+        <strong style="color:#5a8aaa;">TEST PLAN</strong><br>
+        <label><input type="checkbox"> Open fresh tab → click APPLY &amp; START BATTLE → should land directly on battle scene with reels spinning</label><br>
+        <label><input type="checkbox"> Change P1/P2 checkboxes → click APPLY &amp; START BATTLE → new symbols reflected in battle</label><br>
+        <label><input type="checkbox"> During running battle → click APPLY &amp; START BATTLE → config hot-reloads without page reload</label><br>
+        <label><input type="checkbox"> Select fewer than 5 for either side → click APPLY &amp; START BATTLE → shows alert, no crash</label>
+      </div>
     </div>
 
     <script>
@@ -544,16 +553,29 @@
     }
 
     window.cpApplyAndStart = function() {
+      // 1. Read current P1/P2 checkbox state from DOM into selA/selB
+      SYMBOLS_CP.forEach(sym => {
+        const chkA = document.getElementById('chkA' + sym.id);
+        const chkB = document.getElementById('chkB' + sym.id);
+        if (chkA) { if (chkA.checked) selA.add(sym.id); else selA.delete(sym.id); }
+        if (chkB) { if (chkB.checked) selB.add(sym.id); else selB.delete(sym.id); }
+      });
+
+      // 2. Build full config (includes selectedA/selectedB from selA/selB Sets above)
       const cfg = buildConfig();
+
       if (cfg.selectedA.length < 5 || cfg.selectedB.length < 5) {
-        alert('Each player must select at least 5 symbols. Check the symbol table checkboxes.');
+        alert('Each player must select exactly 5 symbols (P1 and P2 columns in the symbol table).');
         return;
       }
+
       if (window.__dualSlotsBridge) {
+        // 3. Push config — bridge routes to whichever scene is active:
+        //    DraftScene:  DRAFT_CONFIG_OVERRIDE → pre-fills + auto-starts
+        //    GameScene:   BATTLE_CONFIG_UPDATED  → hot-reloads running battle
         window.__dualSlotsBridge.applyConfig(cfg);
       } else {
-        // Fallback: reload page won't work — display warning
-        alert('Game bridge not ready. Start the game first via the title screen.');
+        alert('Game bridge not ready. Wait for the Phaser canvas to finish loading.');
       }
     };
 

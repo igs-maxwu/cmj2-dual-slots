@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { COLORS, LAYOUT, FONT_SIZE, FONT, TEAM, GOLD, RADIUS } from '@/config/DesignTokens';
 import { EventBus } from '@/systems/EventBus';
 import { EventNames } from '@/config/EventNames';
-import { FormationGrid } from './FormationGrid';
+import { FormationGrid, FORMATION_CARD_W, stackHeight } from './FormationGrid';
 import type { Side } from '@/systems/SlotEngine';
 import { CANVAS_HEIGHT } from '@/config/GameConfig';
 import { GoldFrame } from './design/GoldFrame';
@@ -78,13 +78,18 @@ export class PlayerPanel extends Phaser.GameObjects.Container {
     divider.fillRect(12, 56, W - 24, 1);
     this.add(divider);
 
-    // Formation grid (centred in panel, sits below the faction banner)
-    const gridOffsetX = (W - LAYOUT.gridW) / 2;
-    const gridOffsetY = 60;   // was 50 — shifted down to clear taller banner
+    // Portrait card stack — centred in the panel, sits below the faction banner.
+    // gridOffsetX centres the FORMATION_CARD_W within the panel width W.
+    const BANNER_H    = 60;
+    const gridOffsetX = Math.round((W - FORMATION_CARD_W) / 2);
+    const gridOffsetY = BANNER_H;
     this.grid = new FormationGrid(this.scene, gridOffsetX, gridOffsetY, this.side);
     this.add(this.grid);
 
-    const statY = gridOffsetY + LAYOUT.gridH + 20;
+    // Stat section starts below the card stack.
+    // stackHeight(3) is the default; this updates naturally once setUnits() is
+    // called with the real roster size, but we seed with 3 for initial layout.
+    const statY = gridOffsetY + stackHeight(3, BANNER_H) + 16;
 
     // Coin label
     this.add(

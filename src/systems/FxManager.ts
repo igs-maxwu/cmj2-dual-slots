@@ -3,8 +3,6 @@ import { EventBus } from './EventBus';
 import { EventNames } from '@/config/EventNames';
 import { COLORS, FONT_SIZE, FONT } from '@/config/DesignTokens';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/config/GameConfig';
-import type { ResolvedEffect } from '@/systems/SkillResolver';
-import { registry } from '@/systems/SpiritRegistry';
 
 /**
  * [The Illusionist] — All game-feel effects, Promise-wrapped for sequencing.
@@ -196,12 +194,12 @@ export class FxManager {
    * Returns a Promise that resolves when the pill animation finishes.
    */
   async playSkillTrigger(
-    effect:    ResolvedEffect,
+    effect:    { side: 'A'|'B'; label?: string; type?: string },
     anchor:    { x: number; y: number },
     portrait?: Phaser.GameObjects.GameObject,
   ): Promise<void> {
     const sideColor = effect.side === 'A' ? COLORS.playerA : COLORS.playerB;
-    const label     = registry.getSkillName(effect.spiritId) ?? effect.type;
+    const label     = effect.label ?? effect.type ?? 'SKILL';
 
     // ── Pill background ──────────────────────────────────────────────────────
     const pillW = Math.min(label.length * 9 + 20, 160);

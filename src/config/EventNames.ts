@@ -34,21 +34,35 @@ export const EventNames = {
 
   // Draft scene
   DRAFT_COMPLETE:     'scene:draftComplete',
+
+  // Config panel bridge (R7)
+  BATTLE_CONFIG_UPDATED: 'config:battleConfigUpdated',
 } as const;
 
 export type EventName = typeof EventNames[keyof typeof EventNames];
 
 // ─── Payload types ───────────────────────────────────────────────────────────
 
-import type { ResolvedEffects } from '@/systems/SkillResolver';
-import type { Side } from '@/systems/SlotEngine';
+export type { Side } from '@/systems/SlotEngine';
 
-/** Payload emitted with EventNames.SKILL_RESOLVED after evaluateSide runs. */
+/** @deprecated Skills removed in R5. Kept for any stale import references. */
 export interface SkillResolvedPayload {
-  /** Which side these effects belong to. */
-  side:    Side;
-  /** Round counter (1-indexed) when the skills fired. */
+  side:    'A' | 'B';
   round:   number;
-  /** The resolved effects produced by SkillResolver.resolve(). */
-  effects: ResolvedEffects;
+  effects: unknown[];
+}
+
+/** Config applied via the HTML control panel bridge. */
+export interface BattleConfigPayload {
+  selectedA:   number[];
+  selectedB:   number[];
+  teamHpA:     number;
+  teamHpB:     number;
+  betA:        number;
+  betB:        number;
+  coinScaleA:  number;
+  dmgScaleA:   number;
+  coinScaleB:  number;
+  dmgScaleB:   number;
+  fairnessExp: number;
 }

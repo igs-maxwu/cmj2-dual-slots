@@ -76,7 +76,8 @@ const RARITY_COLORS: Record<string, { bg: number; fg: string }> = {
 };
 
 function buildSpiritDisplayList(): SpiritDisplay[] {
-  return spiritsData.spirits.map(s => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (spiritsData.spirits as any[]).map((s: any) => {
     const beastInfo = BEAST_COLOR_MAP[s.beast] ?? { num: 0x7f8c9a, str: '#7f8c9a', en: s.beast, zh: s.beast };
     const py = s.nameEn ?? s.name;
     const atkDisplay  = Math.round(s.atkBonus  * 150);

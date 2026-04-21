@@ -1,0 +1,22 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  
+  <rect x="4" y="4" width="72" height="72" fill="#0f0f1a" stroke="#f1c40f" stroke-width="2"></rect>
+  
+  <rect x="8" y="8" width="32" height="32" fill="#52B788"></rect>
+  <text x="24" y="30" fill="#0f0f1a" font-family="serif" font-weight="900" font-size="18" text-anchor="middle">青</text>
+  
+  <rect x="40" y="8" width="32" height="32" fill="#EF9B0F"></rect>
+  <text x="56" y="30" fill="#0f0f1a" font-family="serif" font-weight="900" font-size="18" text-anchor="middle">朱</text>
+  
+  <rect x="8" y="40" width="32" height="32" fill="#E63946"></rect>
+  <text x="24" y="62" fill="#0f0f1a" font-family="serif" font-weight="900" font-size="18" text-anchor="middle">白</text>
+  
+  <rect x="40" y="40" width="32" height="32" fill="#0096C7"></rect>
+  <text x="56" y="62" fill="#0f0f1a" font-family="serif" font-weight="900" font-size="18" text-anchor="middle">玄</text>
+  
+  <rect x="2" y="2" width="6" height="6" fill="#f1c40f"></rect>
+  <rect x="72" y="2" width="6" height="6" fill="#f1c40f"></rect>
+  <rect x="2" y="72" width="6" height="6" fill="#f1c40f"></rect>
+  <rect x="72" y="72" width="6" height="6" fill="#f1c40f"></rect>
+</svg>

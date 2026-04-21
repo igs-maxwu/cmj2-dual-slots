@@ -1,0 +1,17 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+body { margin:0; padding:16px; background: linear-gradient(180deg,#0b2f5e,#061a33); font-family:var(--font-body); display:flex; gap:18px; align-items:center; justify-content:center; }
+.glyph { display:flex; flex-direction:column; align-items:center; }
+.g { width:48px; height:48px; border-radius:12px; background: var(--surf-panel); display:flex; align-items:center; justify-content:center; position:relative; box-shadow: 0 4px 8px rgba(0,0,0,0.4); background-clip: padding-box; }
+.g::before { content:''; position:absolute; inset:-2px; border-radius:inherit; padding:2px; background: var(--grad-gold-v); -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; }
+.g span { font-family: var(--font-num); font-size:22px; font-weight:800; background: var(--grad-gold-text); -webkit-background-clip:text; background-clip:text; color:transparent; }
+.lbl { color:#7ea3c7; font-size:9px; letter-spacing:0.14em; text-transform:uppercase; margin-top:6px; font-weight:700; }
+</style></head><body>
+<div class="glyph"><div class="g"><span>★</span></div><div class="lbl">WIN</div></div>
+<div class="glyph"><div class="g"><span>✕</span></div><div class="lbl">CLOSE</div></div>
+<div class="glyph"><div class="g"><span>$</span></div><div class="lbl">COIN</div></div>
+<div class="glyph"><div class="g"><span>≡</span></div><div class="lbl">MENU</div></div>
+<div class="glyph"><div class="g"><span>♪</span></div><div class="lbl">AUDIO</div></div>
+<div class="glyph"><div class="g"><span>⚙</span></div><div class="lbl">SETTINGS</div></div>
+<div class="glyph"><div class="g"><span>VS</span></div><div class="lbl">VERSUS</div></div>
+</body></html>

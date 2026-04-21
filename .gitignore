@@ -6,6 +6,8 @@ dist/
 
 # Local Claude Code settings (machine-specific permissions)
 .claude/settings.local.json
+# Claude worktree scratch dirs (machine-specific)
+.claude/worktrees/
 
 # Vite cache
 .vite/

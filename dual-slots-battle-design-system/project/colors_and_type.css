@@ -1,0 +1,185 @@
+/* ──────────────────────────────────────────────────────────────────────────
+   DUAL SLOTS BATTLE — Design Tokens
+   Aesthetic: 豪華東亞仙境 · 深海金色 · 1v1 雀靈競技場老虎機
+   ──────────────────────────────────────────────────────────────────────── */
+
+/* === FONTS ================================================================ */
+/* Noto Sans TC: served locally from uploaded variable font file */
+@font-face {
+  font-family: 'Noto Sans TC';
+  src: url('fonts/NotoSansTC-VariableFont_wght.ttf') format('truetype-variations');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+/* Remaining display/title/number faces still load from Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&family=Noto+Serif+TC:wght@400;600;700;900&family=Cinzel:wght@600;800&display=swap');
+
+:root {
+  /* === PALETTE ============================================================ */
+
+  /* ─ Sea · 深海底層（背景） ─ */
+  --sea-abyss:      #061a33;   /* 最深，舞台底 */
+  --sea-deep:       #0b2f5e;   /* 主背景 */
+  --sea-mid:        #1b5a8a;   /* 漸層中段 */
+  --sea-light:      #3aa8c9;   /* 水面光、光束 */
+  --sea-caustic:    #7ad7e8;   /* 焦散高光 */
+  --sea-rim:        #12406b;   /* 框體內側陰影 */
+
+  /* ─ Gold · 金屬（框線、標題、Logo） ─ */
+  --gold-pale:      #ffe9a8;
+  --gold-light:     #ffd54a;   /* 金色亮部 */
+  --gold:           #f5b82a;
+  --gold-deep:      #e89b1a;   /* 金色暗部 */
+  --gold-shadow:    #8a5412;   /* 金框陰影 */
+  --gold-glow:      #ffc94d;   /* 發光暈 */
+
+  /* 金屬漸層（一律用這個，勿手搓） */
+  --grad-gold-v:    linear-gradient(180deg, #ffe9a8 0%, #ffd54a 38%, #f5b82a 60%, #e89b1a 82%, #8a5412 100%);
+  --grad-gold-h:    linear-gradient(90deg, #ffd54a 0%, #f5b82a 50%, #e89b1a 100%);
+  --grad-gold-text: linear-gradient(180deg, #fff2b8 0%, #ffd54a 45%, #e89b1a 70%, #8a5412 100%);
+
+  /* ─ CTA · 按鈕 ─ */
+  --cta-green:        #28c76f;
+  --cta-green-light:  #58e090;
+  --cta-green-deep:   #16803d;
+  --cta-red:          #e74c3c;   /* 最大押注、危險 */
+  --cta-red-deep:     #9b1b1b;
+  --cta-gold:         var(--gold);
+  --cta-gold-deep:    var(--gold-deep);
+
+  /* ─ Team · 1v1 陣營（覆蓋整面） ─ */
+  --team-azure:       #2f88e8;   /* 青龍 · 左 */
+  --team-azure-deep:  #164d8f;
+  --team-azure-glow:  #6ab7ff;
+  --team-vermilion:       #e84a3c;   /* 朱雀 · 右 */
+  --team-vermilion-deep:  #8a1e12;
+  --team-vermilion-glow:  #ff8a6a;
+
+  /* ─ Symbols · 轉軸符號（厚塗 placeholder 用色） ─ */
+  --sym-low-1:   #c9a27a;   /* 低額：貝殼褐 */
+  --sym-low-2:   #b388d6;   /* 低額：海螺紫 */
+  --sym-low-3:   #ffd27a;   /* 低額：金螺 */
+  --sym-mid-1:   #5fc29a;   /* 中額：靈龜綠 */
+  --sym-mid-2:   #ff6b88;   /* 中額：朱雀紅 */
+  --sym-mid-3:   #a06bd8;   /* 中額：玄武紫 */
+  --sym-high-1:  #ffb347;   /* 高額：麒麟金 */
+  --sym-high-2:  #4fd1e8;   /* 高額：青龍 */
+  --sym-wild:    #ffe066;   /* Wild：金 */
+  --sym-scatter: #ff3b6b;   /* Scatter：紅 */
+
+  /* ─ HP / 狀態 ─ */
+  --hp-high:   #39d274;
+  --hp-mid:    #ffb020;
+  --hp-low:    #e84a3c;
+  --hp-track:  #1a0f0f;
+
+  /* ─ Text ─ */
+  --fg-white:     #ffffff;
+  --fg-cream:     #fff6da;   /* 金框內文字 */
+  --fg-muted:     #7ea3c7;   /* 水藍次要 */
+  --fg-dim:       #4f7a9e;
+  --fg-shadow:    #051326;   /* text-shadow 用 */
+
+  /* ─ Surfaces · 面板 ─ */
+  --surf-panel:       rgba(8, 28, 54, 0.85);   /* 半透藍 */
+  --surf-panel-solid: #0d2547;
+  --surf-glass:       rgba(122, 215, 232, 0.08);
+  --surf-dark-inlay:  #020a18;   /* reel 內框、贏分窗 */
+  --surf-overlay:     rgba(3, 10, 22, 0.75);
+
+  /* ─ Glows · 發光（box-shadow / filter） ─ */
+  --glow-gold:     0 0 24px rgba(255, 201, 77, 0.55), 0 0 48px rgba(255, 201, 77, 0.25);
+  --glow-gold-sm:  0 0 10px rgba(255, 201, 77, 0.65);
+  --glow-azure:    0 0 32px rgba(106, 183, 255, 0.55), 0 0 64px rgba(47, 136, 232, 0.30);
+  --glow-vermilion: 0 0 32px rgba(255, 138, 106, 0.55), 0 0 64px rgba(232, 74, 60, 0.30);
+  --glow-green:    0 0 18px rgba(88, 224, 144, 0.60);
+
+  /* ─ Shadows · 立體陰影 ─ */
+  --sh-frame-outer:  0 6px 14px rgba(0,0,0,0.55), 0 2px 3px rgba(0,0,0,0.4);
+  --sh-frame-inner:  inset 0 1px 0 rgba(255,230,160,0.35), inset 0 -2px 4px rgba(0,0,0,0.5);
+  --sh-button:       0 4px 0 rgba(0,0,0,0.35), 0 6px 14px rgba(0,0,0,0.5);
+  --sh-button-press: 0 1px 0 rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.5);
+
+  /* === GEOMETRY =========================================================== */
+  --radius-sm:  6px;
+  --radius-md:  10px;
+  --radius-lg:  18px;
+  --radius-pill: 999px;
+
+  --frame-gold-w: 3px;
+  --frame-inner-w: 1px;
+
+  /* spacing (4px grid) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px;
+  --s-6: 24px; --s-8: 32px; --s-10: 40px; --s-12: 48px;
+
+  /* === TYPE SCALE ========================================================= */
+  --font-display:  'Ma Shan Zheng', 'Noto Serif TC', serif;   /* 書法大標（波賽頓 / 雀靈戰記） */
+  --font-display-bold: 'ZCOOL KuaiLe', 'Noto Serif TC', serif;
+  --font-title:    'Noto Serif TC', 'Cinzel', serif;          /* 次標題、UI 重要字 */
+  --font-body:     'Noto Sans TC', 'PingFang TC', sans-serif; /* UI 一般 */
+  --font-num:      'Cinzel', 'Noto Serif TC', serif;          /* 數字 (贏分/金幣/倍率) */
+
+  --fs-xs: 11px; --fs-sm: 13px; --fs-md: 15px; --fs-lg: 18px;
+  --fs-xl: 22px; --fs-2xl: 28px; --fs-3xl: 40px; --fs-4xl: 56px; --fs-hero: 88px;
+
+  --lh-tight: 1.05;
+  --lh-base:  1.35;
+  --ls-ui:    0.04em;
+  --ls-caps:  0.18em;
+
+  /* === MOTION ============================================================= */
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in:    cubic-bezier(0.55, 0, 0.75, 0);
+  --ease-back:  cubic-bezier(0.34, 1.56, 0.64, 1);
+  --dur-fast:  120ms;
+  --dur-med:   220ms;
+  --dur-slow:  380ms;
+}
+
+/* ──────────────────────────────────────────────────────────────────────────
+   Semantic helpers
+   ──────────────────────────────────────────────────────────────────────── */
+
+.ds-hero-title {
+  font-family: var(--font-display);
+  font-size: var(--fs-hero);
+  line-height: var(--lh-tight);
+  letter-spacing: 0.04em;
+  background: var(--grad-gold-text);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  -webkit-text-stroke: 2px var(--gold-shadow);
+  filter: drop-shadow(0 4px 0 var(--gold-shadow)) drop-shadow(0 0 12px rgba(255,201,77,0.45));
+}
+.ds-h1 { font-family: var(--font-title); font-weight: 900; font-size: var(--fs-3xl); color: var(--fg-cream); letter-spacing: 0.02em; }
+.ds-h2 { font-family: var(--font-title); font-weight: 700; font-size: var(--fs-2xl); color: var(--fg-cream); letter-spacing: 0.02em; }
+.ds-h3 { font-family: var(--font-title); font-weight: 700; font-size: var(--fs-xl); color: var(--fg-cream); }
+.ds-body { font-family: var(--font-body); font-size: var(--fs-md); color: var(--fg-white); line-height: var(--lh-base); }
+.ds-caption { font-family: var(--font-body); font-size: var(--fs-xs); color: var(--fg-muted); letter-spacing: var(--ls-caps); text-transform: uppercase; }
+.ds-num {
+  font-family: var(--font-num); font-weight: 800; font-variant-numeric: tabular-nums;
+  background: var(--grad-gold-text); -webkit-background-clip: text; background-clip: text; color: transparent;
+  -webkit-text-stroke: 0.5px var(--gold-shadow);
+  filter: drop-shadow(0 1px 0 var(--gold-shadow));
+}
+
+/* Gold frame (cartouche) — 通用容器 */
+.ds-frame {
+  position: relative;
+  background: var(--surf-panel);
+  border: var(--frame-gold-w) solid transparent;
+  background-clip: padding-box;
+  box-shadow: var(--sh-frame-outer), var(--sh-frame-inner);
+  border-radius: var(--radius-md);
+}
+.ds-frame::before {
+  content: ''; position: absolute; inset: calc(var(--frame-gold-w) * -1);
+  border-radius: inherit; padding: var(--frame-gold-w);
+  background: var(--grad-gold-v);
+  -webkit-mask: linear-gradient(#000, #000) content-box, linear-gradient(#000, #000);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  pointer-events: none;
+}

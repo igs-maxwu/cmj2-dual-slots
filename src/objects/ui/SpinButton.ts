@@ -1,19 +1,22 @@
 import Phaser from 'phaser';
-import { COLORS, LAYOUT, FONT_SIZE, FONT } from '@/config/DesignTokens';
+import { LAYOUT, FG, FONT_SIZE, MOTION } from '@/config/DesignTokens';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/config/GameConfig';
 import { EventBus } from '@/systems/EventBus';
 import { EventNames } from '@/config/EventNames';
+import { Button3D } from './design/Button3D';
 
 export type ButtonMode = 'idle' | 'spinning' | 'disabled' | 'gameover';
 
 /**
  * [The Stylist] — Three-state Spin button with auto-spin countdown bar.
- * Emits EventNames.SPIN_REQUESTED on click when in idle/gameover state.
- * [The Illusionist] should add particle FX by listening to SPIN_REQUESTED.
+ *
+ * Wraps {@link Button3D} for the 3D physicality + hover/press visuals
+ * and adds a progress stripe along the bottom edge for auto-spin mode.
+ * Emits `EventNames.SPIN_REQUESTED` when clicked in idle, and
+ * `EventNames.REMATCH_REQUESTED` in gameover.
  */
 export class SpinButton extends Phaser.GameObjects.Container {
-  private bg!:       Phaser.GameObjects.Rectangle;
-  private label!:    Phaser.GameObjects.Text;
+  private btn!:      Button3D;
   private progress!: Phaser.GameObjects.Rectangle;
   private mode:      ButtonMode = 'idle';
 
@@ -35,69 +38,54 @@ export class SpinButton extends Phaser.GameObjects.Container {
   private _build(): void {
     const { btnW, btnH } = LAYOUT;
 
-    this.bg = this.scene.add.rectangle(btnW / 2, btnH / 2, btnW, btnH, COLORS.btnIdle)
-      .setStrokeStyle(2, COLORS.white);
-    this.add(this.bg);
+    this.btn = new Button3D(this.scene, {
+      variant:  'green',
+      label:    'START BATTLE',
+      width:    btnW,
+      height:   btnH,
+      fontSize: FONT_SIZE.lg,
+      onClick:  () => this._onPress(),
+    });
+    this.add(this.btn);
 
-    this.label = this.scene.add.text(btnW / 2, btnH / 2, 'START BATTLE', {
-      fontSize:   `${FONT_SIZE.lg}px`,
-      fontFamily: FONT.bold,
-      color:      '#ffffff',
-    }).setOrigin(0.5, 0.5);
-    this.add(this.label);
-
-    // Auto-spin countdown stripe along the bottom edge
-    this.progress = this.scene.add.rectangle(0, btnH - 3, btnW, 5, COLORS.white, 0.5)
+    // Auto-spin countdown stripe — sits along the bottom of the button body.
+    // Drawn above the gold border for visibility.
+    this.progress = this.scene.add.rectangle(0, btnH - 3, btnW, 4, FG.white, 0.5)
       .setOrigin(0, 0.5);
     this.add(this.progress);
+  }
 
-    // Hit area covers full button
-    this.setSize(btnW, btnH);
-    this.setInteractive({ useHandCursor: true });
-
-    this.on(Phaser.Input.Events.POINTER_OVER, () => {
-      if (this.mode === 'idle') this.bg.setFillStyle(COLORS.btnHover);
-    });
-    this.on(Phaser.Input.Events.POINTER_OUT, () => {
-      if (this.mode === 'idle') this.bg.setFillStyle(COLORS.btnIdle);
-    });
-    this.on(Phaser.Input.Events.POINTER_DOWN, () => {
-      if (this.mode === 'idle') {
-        this.bg.setFillStyle(COLORS.btnPressed);
-        EventBus.emit(EventNames.SPIN_REQUESTED);
-      } else if (this.mode === 'gameover') {
-        EventBus.emit(EventNames.REMATCH_REQUESTED);
-      }
-    });
-    this.on(Phaser.Input.Events.POINTER_UP, () => {
-      if (this.mode === 'idle') this.bg.setFillStyle(COLORS.btnIdle);
-    });
+  private _onPress(): void {
+    if (this.mode === 'idle') {
+      EventBus.emit(EventNames.SPIN_REQUESTED);
+    } else if (this.mode === 'gameover') {
+      EventBus.emit(EventNames.REMATCH_REQUESTED);
+    }
   }
 
   private _refresh(progressPct?: number): void {
     const { btnW } = LAYOUT;
     switch (this.mode) {
       case 'idle':
-        this.bg.setFillStyle(COLORS.btnIdle);
-        this.label.setText('START BATTLE');
-        this.progress.setDisplaySize(btnW, 5);
+        this.btn.setLabel('START BATTLE').setState('idle');
+        this.progress.setDisplaySize(btnW, 4);
         break;
       case 'spinning':
-        this.bg.setFillStyle(COLORS.btnDisabled);
-        this.label.setText('SPINNING...');
-        this.progress.setDisplaySize(0, 5);
+        this.btn.setLabel('SPINNING...').setState('disabled');
+        this.progress.setDisplaySize(0, 4);
         break;
       case 'disabled':
-        this.bg.setFillStyle(COLORS.btnDisabled);
-        this.label.setText('AUTO...');
+        this.btn.setLabel('AUTO...').setState('disabled');
         if (progressPct !== undefined)
-          this.progress.setDisplaySize(btnW * progressPct, 5);
+          this.progress.setDisplaySize(btnW * progressPct, 4);
         break;
       case 'gameover':
-        this.bg.setFillStyle(0x27ae60);
-        this.label.setText('REMATCH');
-        this.progress.setDisplaySize(0, 5);
+        this.btn.setLabel('再戰一場').setState('idle');
+        this.progress.setDisplaySize(0, 4);
         break;
     }
   }
 }
+
+/** Exported so scenes that tween the button can match its motion timing. */
+export const SPIN_BUTTON_DUR = MOTION.durFast;

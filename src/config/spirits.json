@@ -57,7 +57,7 @@
       "atkBonus": 1.8,
       "coinBonus": 0.9,
       "textureKey": "spirit_yin",
-      "injectsSymbols": [0, 1],
+      "injectsSymbols": [0, 1, 2],
       "skill": {
         "id": "SK_TIGER_FANG",
         "name": "Tiger Fang",

@@ -1,0 +1,21 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><link rel="stylesheet" href="../colors_and_type.css">
+<style>
+body { margin:0; padding:16px; background: linear-gradient(180deg,#1b5a8a,#0b2f5e); font-family:var(--font-body); display:flex; align-items:center; justify-content:center; }
+.reel { display:grid; grid-template-columns: repeat(5, 72px); gap:4px; padding:12px; background:#020a18; border-radius:14px; position:relative; box-shadow: 0 0 0 3px transparent, inset 0 2px 6px rgba(0,0,0,0.9); background-clip: padding-box; }
+.reel::before { content:''; position:absolute; inset:-3px; border-radius:inherit; padding:3px; background: var(--grad-gold-v); -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events:none; }
+.sym { height:60px; border-radius:8px; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800; color:#fff; text-shadow:0 1px 3px rgba(0,0,0,0.6); box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.25); }
+</style></head><body>
+<div class="reel">
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#e8c9a0,#c9a27a 60%,#7a5a3d)">貝</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#d4b0ee,#b388d6 60%,#6f4c95)">螺</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#ffe9a8,#ffd27a 60%,#aa7f3a)">金</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#9eecc9,#5fc29a 60%,#2a7053)">龜</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#ffb0bf,#ff6b88 60%,#8a2a3f)">朱</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#cfa8e8,#a06bd8 60%,#4e2e83)">玄</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#ffd8a8,#ffb347 60%,#9e5e10)">麟</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#b0eaf5,#4fd1e8 60%,#1f6a7d)">龍</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#fff2a8,#ffe066 60%,#aa8b10); box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 10px rgba(255,224,102,0.7)">★</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#ff8aa6,#ff3b6b 60%,#931b3f); box-shadow: inset 0 -3px 0 rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.4), 0 0 10px rgba(255,59,107,0.7)">S</div>
+  <div class="sym" style="background:radial-gradient(circle at 30% 25%,#e8c9a0,#c9a27a 60%,#7a5a3d)">貝</div>
+</div>
+</body></html>

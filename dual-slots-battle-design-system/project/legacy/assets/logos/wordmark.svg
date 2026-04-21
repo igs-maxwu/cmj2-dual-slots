@@ -1,0 +1,14 @@
+
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60">
+  <defs>
+    
+  </defs>
+  <rect width="240" height="60" fill="#0f0f1a"></rect>
+  
+  <rect x="10" y="14" width="28" height="32" fill="#3498db" stroke="#f1c40f" stroke-width="1.5"></rect>
+  
+  <rect x="42" y="14" width="28" height="32" fill="#e74c3c" stroke="#f1c40f" stroke-width="1.5"></rect>
+  
+  <text x="82" y="28" fill="#ffffff" font-family="Cinzel, serif" font-weight="900" font-size="15" letter-spacing="2">DUAL SLOTS</text>
+  <text x="82" y="47" fill="#f1c40f" font-family="Cinzel, serif" font-weight="700" font-size="12" letter-spacing="4.5">B A T T L E</text>
+</svg>

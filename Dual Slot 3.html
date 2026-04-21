@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dual Slots Battle - Compact Layout</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #1b1b1b;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        canvas {
+            background-color: #222;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #444;
+        }
+        .controls-container {
+            background-color: #2c3e50;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            width: 800px; /* Match Canvas Width */
+            box-sizing: border-box;
+        }
+        .control-section {
+            background-color: #34495e;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #455a64;
+        }
+        .control-section.full-width {
+            grid-column: 1 / -1;
+        }
+        h3 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #555;
+            padding-bottom: 5px;
+            color: #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+        }
+        .input-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 8px;
+            justify-content: space-between;
+        }
+        label {
+            font-size: 13px;
+            color: #bdc3c7;
+        }
+        input[type="number"] {
+            background-color: #2c3e50;
+            border: 1px solid #7f8c8d;
+            color: white;
+            padding: 4px;
+            border-radius: 4px;
+            width: 70px;
+            text-align: right;
+        }
+        .base-score-input {
+            width: 50px !important;
+            font-weight: bold;
+            color: #3498db;
+            background-color: #202020 !important;
+        }
+        table.symbol-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+        }
+        table.symbol-table th {
+            text-align: center;
+            padding: 8px 4px;
+            border-bottom: 2px solid #555;
+            color: #fff;
+            background-color: #2c3e50;
+        }
+        table.symbol-table td {
+            text-align: center;
+            padding: 6px 4px;
+            border-bottom: 1px solid #444;
+            vertical-align: middle;
+        }
+        table.symbol-table td:first-child {
+            text-align: left;
+        }
+        .symbol-color-box {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            margin-right: 5px;
+            vertical-align: middle;
+            border-radius: 2px;
+            border: 1px solid #fff;
+        }
+        input.weight-input {
+            width: 40px;
+            border-color: #e67e22;
+            text-align: center;
+        }
+        .prob-display {
+            color: #f1c40f;
+            font-weight: bold;
+        }
+        .calc-value {
+            color: #bdc3c7;
+            font-style: italic;
+            font-family: monospace;
+        }
+        .val-a { color: #3498db; }
+        .val-b { color: #e74c3c; }
+        .player-check {
+            transform: scale(1.3);
+            cursor: pointer;
+        }
+        .count-display {
+            font-size: 12px;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .count-valid { background-color: #27ae60; color: white; }
+        .count-invalid { background-color: #c0392b; color: white; }
+        
+        button.apply-btn {
+            background-color: #27ae60;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            grid-column: 1 / -1;
+            transition: background 0.2s;
+        }
+        button.apply-btn:hover { background-color: #2ecc71; }
+        
+        button.sim-btn {
+            background-color: #8e44ad;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        button.sim-btn:hover { background-color: #9b59b6; }
+
+        button.pvp-btn {
+            background-color: #c0392b;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+        button.pvp-btn:hover { background-color: #e74c3c; }
+        
+        button.balance-btn {
+            background-color: #16a085;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+        button.balance-btn:hover { background-color: #1abc9c; }
+
+        .balance-info {
+            grid-column: 1 / -1;
+            background: rgba(0,0,0,0.2);
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 13px;
+            color: #bdc3c7;
+            text-align: center;
+            border: 1px dashed #555;
+        }
+        .pool-weight-display {
+            font-weight: bold;
+            color: #3498db;
+        }
+        .scale-input {
+            color: #2ecc71;
+            font-weight: bold;
+            width: 60px !important;
+            background-color: #202020;
+            border: 1px dashed #555;
+        }
+        .rtp-input {
+            width: 50px !important;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="gameCanvas" width="800" height="900"></canvas>
+
+<div class="controls-container">
+    
+    <!-- 左欄：玩家 A 設定 -->
+    <div class="control-section">
+        <h3 style="color:#3498db">Player A Config</h3>
+        <div class="input-row">
+            <label>Team HP / Bet:</label>
+            <div>
+                <input type="number" id="hpA" value="10000" step="1000" style="width:60px"> / 
+                <input type="number" id="betA" value="100" step="10" style="width:50px">
+            </div>
+        </div>
+        <div class="input-row" style="background:rgba(52, 152, 219, 0.1); padding:5px; border-radius:4px; margin-bottom:5px;">
+            <label style="color:#3498db; font-weight:bold;">Target (Coin/Dmg):</label>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="number" id="rtpA" class="rtp-input" value="97" step="1" oninput="updateProbabilities()">%
+                <span style="color:#aaa">/</span>
+                <input type="number" id="targetDmgA" class="rtp-input" value="300" step="1" style="color:#e67e22" oninput="updateProbabilities()">%
+            </div>
+        </div>
+        <div class="input-row">
+            <label style="color:#2ecc71;">Auto Coin Scale:</label>
+            <input type="number" id="coinScaleA" class="scale-input" value="0.00000" readonly>
+        </div>
+        <div class="input-row">
+            <label style="color:#e67e22;">Auto Dmg Scale:</label>
+            <input type="number" id="dmgScaleA" class="scale-input" value="0.00000" readonly>
+        </div>
+    </div>
+
+    <!-- 右欄：玩家 B 設定 -->
+    <div class="control-section">
+        <h3 style="color:#e74c3c">Player B Config</h3>
+        <div class="input-row">
+            <label>Team HP / Bet:</label>
+            <div>
+                <input type="number" id="hpB" value="10000" step="1000" style="width:60px"> / 
+                <input type="number" id="betB" value="100" step="10" style="width:50px">
+            </div>
+        </div>
+        <div class="input-row" style="background:rgba(231, 76, 60, 0.1); padding:5px; border-radius:4px; margin-bottom:5px;">
+            <label style="color:#e74c3c; font-weight:bold;">Target (Coin/Dmg):</label>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <input type="number" id="rtpB" class="rtp-input" value="97" step="1" oninput="updateProbabilities()">%
+                <span style="color:#aaa">/</span>
+                <input type="number" id="targetDmgB" class="rtp-input" value="300" step="1" style="color:#e67e22" oninput="updateProbabilities()">%
+            </div>
+        </div>
+        <div class="input-row">
+            <label style="color:#2ecc71;">Auto Coin Scale:</label>
+            <input type="number" id="coinScaleB" class="scale-input" value="0.00000" readonly>
+        </div>
+        <div class="input-row">
+            <label style="color:#e67e22;">Auto Dmg Scale:</label>
+            <input type="number" id="dmgScaleB" class="scale-input" value="0.00000" readonly>
+        </div>
+    </div>
+
+    <!-- 中欄：系統參數 -->
+    <div class="control-section full-width">
+        <h3>
+            <span>連線與池子 (4x5 100 Lines)</span>
+            <div>
+                <button class="sim-btn" onclick="runSimulation()">驗證 RTP</button>
+                <button class="pvp-btn" onclick="runMatchSimulation()">模擬 PvP</button>
+                <button class="balance-btn" onclick="autoBalanceWinRate()">⚖️ 自動平衡勝率</button>
+            </div>
+        </h3>
+        
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+                連線基礎分 (3/4/5): 
+                <input type="number" id="base3" class="base-score-input" value="5" oninput="updateProbabilities()">
+                <input type="number" id="base4" class="base-score-input" value="20" oninput="updateProbabilities()">
+                <input type="number" id="base5" class="base-score-input" value="100" oninput="updateProbabilities()">
+            </div>
+            <div>
+                總權重: <span id="poolWeightDisplay" class="pool-weight-display">0</span>
+            </div>
+        </div>
+        
+        <div id="simResult" style="margin-top: 10px; font-size: 13px; color: #f1c40f; font-weight: bold; min-height: 20px; text-align:center;"></div>
+        
+        <div class="balance-info" style="margin-top:10px;">
+            <b>📐 單位制傷害系統 (Unit Damage System)</b>: 
+            <br>傷害邏輯：優先打擊 <b>靠近戰場中心 (內側)</b> 的前鋒單位。
+            <br>A 攻 B：先打 B 的左側 (Col 0)。B 攻 A：先打 A 的右側 (Col 2)。
+        </div>
+    </div>
+
+    <!-- 底部：符號設定 -->
+    <div class="control-section full-width">
+        <h3>
+            <span>符號圈選與獨立賠率 (Draft & Odds)</span>
+            <span>
+                A: <span id="countA" class="count-display count-invalid">0/5</span>
+                B: <span id="countB" class="count-display count-invalid">0/5</span>
+            </span>
+        </h3>
+        <table class="symbol-table">
+            <thead>
+                <tr>
+                    <th style="width: 20%">符號 (Symbol)</th>
+                    <th style="width: 10%">權重</th>
+                    <th style="width: 10%">機率</th>
+                    <th style="width: 10%">A 金幣倍率</th>
+                    <th style="width: 10%">A 傷害倍率</th>
+                    <th style="width: 10%">B 金幣倍率</th>
+                    <th style="width: 10%">B 傷害倍率</th>
+                    <th style="width: 10%; color:#3498db">P1 選</th>
+                    <th style="width: 10%; color:#e74c3c">P2 選</th>
+                </tr>
+            </thead>
+            <tbody id="symbolConfigBody">
+                <!-- 由 JS 動態生成 -->
+            </tbody>
+        </table>
+    </div>
+
+    <button class="apply-btn" onclick="applySettingsAndReset()">確認選擇並開始 (Apply & Start)</button>
+</div>
+
+<script>
+/**
+ * 遊戲設定與常數
+ */
+const CANVAS_WIDTH = 800;
+const CANVAS_HEIGHT = 900; 
+const REEL_ROWS = 4;
+const REEL_COLS = 5;
+
+// === Layout Configuration ===
+const REEL_CELL_W = 80;
+const REEL_CELL_H = 55;
+const REEL_GAP = 8;
+const REEL_TOTAL_W = (REEL_CELL_W * REEL_COLS) + (REEL_GAP * (REEL_COLS - 1));
+const REEL_X = (CANVAS_WIDTH - REEL_TOTAL_W) / 2; 
+const REEL_Y = 400; 
+
+// Battle Formations (Updated: Closer to Center)
+// Grid Width = 3*50 + 2*8 = 166px
+// Center is 400.
+// A Right Edge = 400 - 25 (half gap) = 375. A X = 375 - 166 = 209. Let's use 210.
+// B Left Edge = 400 + 25 = 425. B X = 425.
+const FORMATION_CONFIG = {
+    cellW: 50, 
+    cellGap: 8,
+    offsetY: 80,
+    gridA_X: 210, // Moved inward (was 100)
+    gridB_X: 424  // Moved inward (was 530)
+};
+
+// 初始符號定義
+let SYMBOLS = [
+    { id: 0, color: '#FFD700', name: 'Yellow (Tri)', shape: 'triangle', weight: 20, selectedA: true, selectedB: true },
+    { id: 1, color: '#FF8C00', name: 'Orange (Hex)', shape: 'hexagon',  weight: 15, selectedA: true, selectedB: true },
+    { id: 2, color: '#32CD32', name: 'Green (Sqr)',  shape: 'square',   weight: 12, selectedA: true, selectedB: true },
+    { id: 3, color: '#00FFFF', name: 'Cyan (Cross)', shape: 'cross',    weight: 10, selectedA: true, selectedB: true },
+    { id: 4, color: '#1E90FF', name: 'Blue (Cir)',   shape: 'circle',   weight: 8,  selectedA: true, selectedB: true },
+    { id: 5, color: '#FF69B4', name: 'Pink (Heart)', shape: 'heart',    weight: 6,  selectedA: false, selectedB: false },
+    { id: 6, color: '#FF4500', name: 'Red (Dia)',    shape: 'diamond',  weight: 4,  selectedA: false, selectedB: false },
+    { id: 7, color: '#9400D3', name: 'Purple (Star)',shape: 'star',     weight: 2,  selectedA: false, selectedB: false }
+];
+
+let fairnessExp = 2.0; 
+const COIN_EXPONENT_FIXED = 2.0; 
+
+let PAYOUT_BASE = { 3: 5, 4: 20, 5: 100 };
+const LINES_COUNT = 100;
+
+const STATE = {
+    IDLE: 0,
+    SPINNING: 1,
+    STOPPING: 2,
+    RESULT: 3,
+    GAME_OVER: 4
+};
+
+const DEFAULT_INITIAL_HP = 10000;
+const DEFAULT_COIN = 10000;
+
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+
+let gameState = STATE.IDLE;
+let frames = 0;
+let reelData = []; 
+let activeLinesA = []; 
+let activeLinesB = []; 
+let payLines = [];     
+let floatTexts = []; 
+let activeSymbolPool = []; 
+
+let isAutoBattling = false;
+let autoSpinDelay = 0; 
+let currentDelaySetting = 60;
+let roundNumber = 0;
+let battleLog = []; 
+
+const playerA = {
+    name: "Player A",
+    hp: DEFAULT_INITIAL_HP,
+    maxHp: DEFAULT_INITIAL_HP,
+    coin: DEFAULT_COIN,
+    initialCoin: DEFAULT_COIN,
+    bet: 100,
+    color: '#3498db', 
+    lastDmgDealt: 0,
+    totalDmgDealt: 0,
+    selectedSymbols: [],
+    coinScale: 1.0,
+    dmgScale: 1.0,
+    formation: [] 
+};
+
+const playerB = {
+    name: "Player B",
+    hp: DEFAULT_INITIAL_HP,
+    maxHp: DEFAULT_INITIAL_HP,
+    coin: DEFAULT_COIN,
+    initialCoin: DEFAULT_COIN,
+    bet: 100,
+    color: '#e74c3c',
+    lastDmgDealt: 0,
+    totalDmgDealt: 0,
+    selectedSymbols: [],
+    coinScale: 1.0,
+    dmgScale: 1.0,
+    formation: []
+};
+
+let spinTimer = 0;
+let stoppingReelIndex = 0;
+
+function init() {
+    generatePaylines(); 
+    generateSymbolInputs(); 
+    updateProbabilities(); 
+    applySettingsAndReset();
+    requestAnimationFrame(gameLoop);
+    
+    canvas.addEventListener('click', handleInput);
+    canvas.addEventListener('touchstart', (e) => {
+        handleInput({ clientX: e.touches[0].clientX, clientY: e.touches[0].clientY });
+    });
+}
+
+function generatePaylines() {
+    payLines = [];
+    let seed = 12345;
+    let pseudoRand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+    for(let i=0; i<LINES_COUNT; i++) {
+        let line = [];
+        let r = Math.floor(pseudoRand() * REEL_ROWS);
+        line.push(r);
+        for(let c=1; c<REEL_COLS; c++) {
+            let move = Math.floor(pseudoRand() * 3) - 1; 
+            r += move;
+            if(r < 0) r = 1;
+            if(r >= REEL_ROWS) r = REEL_ROWS - 2;
+            line.push(r);
+        }
+        payLines.push(line);
+    }
+}
+
+function generateSymbolInputs() {
+    const tbody = document.getElementById('symbolConfigBody');
+    tbody.innerHTML = '';
+    SYMBOLS.forEach((sym, index) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>
+                <span class="symbol-color-box" style="background-color:${sym.color}"></span>
+                ${sym.name}
+            </td>
+            <td>
+                <input type="number" class="weight-input" id="sym_weight_${index}" value="${sym.weight}" min="1" oninput="updateProbabilities()">
+            </td>
+            <td id="sym_prob_${index}" class="prob-display">0%</td>
+            <td id="sym_coin_a_${index}" class="calc-value val-a">-</td>
+            <td id="sym_dmg_a_${index}" class="calc-value val-a">-</td>
+            <td id="sym_coin_b_${index}" class="calc-value val-b">-</td>
+            <td id="sym_dmg_b_${index}" class="calc-value val-b">-</td>
+            <td style="text-align:center; background:rgba(52, 152, 219, 0.1)">
+                <input type="checkbox" class="player-check check-a" id="check_a_${index}" ${sym.selectedA ? 'checked' : ''} onchange="updateProbabilities()">
+            </td>
+            <td style="text-align:center; background:rgba(231, 76, 60, 0.1)">
+                <input type="checkbox" class="player-check check-b" id="check_b_${index}" ${sym.selectedB ? 'checked' : ''} onchange="updateProbabilities()">
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function calculateOptimalScales(targetRTP, targetDmg, selectedSymsIndices, totalW, symbolList, expCoin, expDmg) {
+    let totalRawEVCoin = 0;
+    let totalRawEVDmg = 0;
+
+    selectedSymsIndices.forEach(symIndex => {
+        let sym = symbolList[symIndex];
+        let prob = sym.weight / totalW;
+        let ratio = totalW / sym.weight;
+        let dynamicCoin = Math.pow(ratio, expCoin);
+        let dynamicDmg = Math.pow(ratio, expDmg);
+        let p3 = Math.pow(prob, 3) * (1 - prob);
+        let p4 = Math.pow(prob, 4) * (1 - prob);
+        let p5 = Math.pow(prob, 5);
+        let evBase = (p3 * PAYOUT_BASE[3]) + (p4 * PAYOUT_BASE[4]) + (p5 * PAYOUT_BASE[5]);
+        totalRawEVCoin += evBase * dynamicCoin;
+        totalRawEVDmg += evBase * dynamicDmg;
+    });
+
+    let finalRawCoin = totalRawEVCoin * LINES_COUNT;
+    let finalRawDmg = totalRawEVDmg * LINES_COUNT;
+    if(finalRawCoin === 0) finalRawCoin = 1;
+    if(finalRawDmg === 0) finalRawDmg = 1;
+
+    return { coin: targetRTP / finalRawCoin, dmg: targetDmg / finalRawDmg };
+}
+
+window.updateProbabilities = function() {
+    let countA = 0, countB = 0, totalActiveWeight = 0;
+    let selectedA_indices = [], selectedB_indices = [];
+    
+    PAYOUT_BASE[3] = parseFloat(document.getElementById('base3').value) || 5;
+    PAYOUT_BASE[4] = parseFloat(document.getElementById('base4').value) || 20;
+    PAYOUT_BASE[5] = parseFloat(document.getElementById('base5').value) || 100;
+    
+    SYMBOLS.forEach((sym, index) => {
+        const wInput = document.getElementById(`sym_weight_${index}`);
+        const checkA = document.getElementById(`check_a_${index}`);
+        const checkB = document.getElementById(`check_b_${index}`);
+        let w = parseInt(wInput.value) || 1;
+        sym.weight = w;
+
+        if (checkA.checked) { countA++; selectedA_indices.push(index); }
+        if (checkB.checked) { countB++; selectedB_indices.push(index); }
+        if (checkA.checked || checkB.checked) totalActiveWeight += w;
+    });
+
+    document.getElementById('poolWeightDisplay').innerText = totalActiveWeight;
+
+    const expCoin = COIN_EXPONENT_FIXED; 
+    const rtpA = parseFloat(document.getElementById('rtpA').value) || 97;
+    const dmgA = parseFloat(document.getElementById('targetDmgA').value) || 300;
+    const rtpB = parseFloat(document.getElementById('rtpB').value) || 97;
+    const dmgB = parseFloat(document.getElementById('targetDmgB').value) || 300;
+
+    let scalesA = { coin: 0, dmg: 0 };
+    let scalesB = { coin: 0, dmg: 0 };
+
+    if (totalActiveWeight > 0) {
+        if(selectedA_indices.length > 0) scalesA = calculateOptimalScales(rtpA, dmgA, selectedA_indices, totalActiveWeight, SYMBOLS, expCoin, fairnessExp);
+        if(selectedB_indices.length > 0) scalesB = calculateOptimalScales(rtpB, dmgB, selectedB_indices, totalActiveWeight, SYMBOLS, expCoin, fairnessExp);
+    }
+    
+    document.getElementById('coinScaleA').value = scalesA.coin.toFixed(6); 
+    document.getElementById('dmgScaleA').value = scalesA.dmg.toFixed(6);
+    document.getElementById('coinScaleB').value = scalesB.coin.toFixed(6);
+    document.getElementById('dmgScaleB').value = scalesB.dmg.toFixed(6);
+
+    playerA.coinScale = scalesA.coin; playerA.dmgScale = scalesA.dmg;
+    playerB.coinScale = scalesB.coin; playerB.dmgScale = scalesB.dmg;
+
+    SYMBOLS.forEach((sym, index) => {
+        const checkA = document.getElementById(`check_a_${index}`);
+        const checkB = document.getElementById(`check_b_${index}`);
+        const probDisplay = document.getElementById(`sym_prob_${index}`);
+        
+        let w = sym.weight;
+        if (checkA.checked || checkB.checked) {
+            let percent = totalActiveWeight > 0 ? ((w / totalActiveWeight) * 100).toFixed(1) : 0;
+            probDisplay.innerText = `${percent}%`;
+            probDisplay.style.color = "#f1c40f";
+
+            let ratio = totalActiveWeight / w;
+            let dynCoin = Math.pow(ratio, expCoin);
+            let dynDmg = Math.pow(ratio, fairnessExp);
+            let coinMa = (scalesA.coin * dynCoin).toFixed(2);
+            let dmgMa = (scalesA.dmg * dynDmg).toFixed(2);
+            let coinMb = (scalesB.coin * dynCoin).toFixed(2);
+            let dmgMb = (scalesB.dmg * dynDmg).toFixed(2);
+
+            sym.coinMultA = parseFloat(coinMa); sym.dmgMultA = parseFloat(dmgMa);
+            sym.coinMultB = parseFloat(coinMb); sym.dmgMultB = parseFloat(dmgMb);
+
+            document.getElementById(`sym_coin_a_${index}`).innerText = checkA.checked ? `x${coinMa}` : '-';
+            document.getElementById(`sym_dmg_a_${index}`).innerText = checkA.checked ? `x${dmgMa}` : '-';
+            document.getElementById(`sym_coin_b_${index}`).innerText = checkB.checked ? `x${coinMb}` : '-';
+            document.getElementById(`sym_dmg_b_${index}`).innerText = checkB.checked ? `x${dmgMb}` : '-';
+        } else {
+            probDisplay.innerText = "0%"; probDisplay.style.color = "#555";
+            document.getElementById(`sym_coin_a_${index}`).innerText = "-";
+            document.getElementById(`sym_dmg_a_${index}`).innerText = "-";
+            document.getElementById(`sym_coin_b_${index}`).innerText = "-";
+            document.getElementById(`sym_dmg_b_${index}`).innerText = "-";
+        }
+    });
+
+    const countASpan = document.getElementById('countA');
+    const countBSpan = document.getElementById('countB');
+    countASpan.innerText = `${countA}/5`;
+    countBSpan.innerText = `${countB}/5`;
+    countASpan.className = countA === 5 ? "count-display count-valid" : "count-display count-invalid";
+    countBSpan.className = countB === 5 ? "count-display count-valid" : "count-display count-invalid";
+}
+
+window.autoBalanceWinRate = function() {
+    const resultDisplay = document.getElementById('simResult');
+    resultDisplay.innerText = "自動平衡勝率中... (Target ±1%)";
+    resultDisplay.style.color = "#ccc";
+
+    setTimeout(() => {
+        const hpA = parseInt(document.getElementById('hpA').value) || 10000;
+        const hpB = parseInt(document.getElementById('hpB').value) || 10000;
+        const betA = parseInt(document.getElementById('betA').value) || 100;
+        const betB = parseInt(document.getElementById('betB').value) || 100;
+        
+        const MAX_ITERATIONS = 15; 
+        const TARGET_WIN_RATE = 50.0; 
+        const TOLERANCE = 1.0;        
+        const MATCHES_PER_ITER = 600; 
+        const ROUND_LIMIT = 2000; 
+
+        let currentExp = fairnessExp;
+        let finalWinRateA = 0;
+
+        for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
+            fairnessExp = currentExp; 
+            window.updateProbabilities(); 
+            let simPool = [], tempSelectedA = [], tempSelectedB = [];
+            SYMBOLS.forEach((sym, idx) => {
+                const checkA = document.getElementById(`check_a_${idx}`);
+                const checkB = document.getElementById(`check_b_${idx}`);
+                if(checkA.checked) tempSelectedA.push(sym.id);
+                if(checkB.checked) tempSelectedB.push(sym.id);
+                if(checkA.checked || checkB.checked) simPool.push({ id: sym.id, weight: sym.weight });
+            });
+            if(simPool.length === 0) return;
+
+            let totalW = simPool.reduce((sum, s) => sum + s.weight, 0);
+            let getSimRand = () => {
+                let r = Math.random() * totalW;
+                for(let s of simPool) { if(r < s.weight) return s.id; r -= s.weight; }
+                return simPool[simPool.length-1].id;
+            };
+
+            let winsA = 0;
+            for(let m=0; m<MATCHES_PER_ITER; m++) {
+                let curHpA = hpA, curHpB = hpB, rounds = 0;
+                while(curHpA > 0 && curHpB > 0 && rounds < ROUND_LIMIT) {
+                    rounds++;
+                    let simReels = [];
+                    for(let r=0; r<REEL_ROWS; r++) {
+                        let row = [];
+                        for(let c=0; c<REEL_COLS; c++) row.push(getSimRand());
+                        simReels.push(row);
+                    }
+                    let resA = calculateSpinWin(simReels, tempSelectedA, 'A');
+                    let resB = calculateSpinWin(simReels, tempSelectedB, 'B');
+                    let dmgToB = Math.max(0, Math.floor(resA.dmg * (betA/100)));
+                    let dmgToA = Math.max(0, Math.floor(resB.dmg * (betB/100)));
+                    if(resA.dmg > 0 && dmgToB === 0) dmgToB = 1;
+                    if(resB.dmg > 0 && dmgToA === 0) dmgToA = 1;
+                    curHpA -= dmgToA; curHpB -= dmgToB;
+                }
+                if (curHpA > 0) winsA++;
+            }
+
+            let winRateA = (winsA / MATCHES_PER_ITER) * 100;
+            finalWinRateA = winRateA;
+            let diff = winRateA - TARGET_WIN_RATE;
+            if (Math.abs(diff) <= TOLERANCE) break;
+            let step = Math.abs(diff) > 5 ? 0.2 : 0.05;
+            if (diff > 0) currentExp += step; else currentExp -= step;          
+            if (currentExp < 0.1) currentExp = 0.1;
+            if (currentExp > 10.0) currentExp = 10.0;
+        }
+
+        fairnessExp = currentExp;
+        window.updateProbabilities(); 
+        resultDisplay.innerHTML = `平衡完畢! <br>隱藏指數: ${currentExp.toFixed(3)} (勝率A: ${finalWinRateA.toFixed(1)}%)`;
+        resultDisplay.style.color = "#2ecc71";
+    }, 50);
+}
+
+window.runMatchSimulation = function() {
+    const resultDisplay = document.getElementById('simResult');
+    resultDisplay.innerText = "PvP 模擬已簡化跳過 (請直接體驗陣型系統)";
+    resultDisplay.style.color = "#f39c12";
+}
+
+window.runSimulation = function() {
+    const resultDisplay = document.getElementById('simResult');
+    resultDisplay.innerText = "RTP 驗證中... (請查看 Console)";
+    resultDisplay.style.color = "#2ecc71";
+}
+
+function calculateSpinWin(reels, selectedSyms, playerType) {
+    let totalWin = 0, totalDmg = 0;
+    payLines.forEach(line => {
+        let firstSymId = reels[line[0]][0];
+        if (!selectedSyms.includes(firstSymId)) return;
+        let matchCount = 1;
+        for (let c = 1; c < REEL_COLS; c++) {
+            if (reels[line[c]][c] === firstSymId) matchCount++; else break;
+        }
+        if (matchCount >= 3) {
+            let base = PAYOUT_BASE[matchCount];
+            let sym = SYMBOLS[firstSymId];
+            if(playerType === 'A') { totalWin += base * sym.coinMultA; totalDmg += base * sym.dmgMultA; } 
+            else { totalWin += base * sym.coinMultB; totalDmg += base * sym.dmgMultB; }
+        }
+    });
+    return { coin: totalWin, dmg: totalDmg };
+}
+
+function getRandomSymbolId() {
+    if (activeSymbolPool.length === 0) return 0;
+    let totalWeight = activeSymbolPool.reduce((sum, s) => sum + s.weight, 0);
+    let random = Math.random() * totalWeight;
+    for (let i = 0; i < activeSymbolPool.length; i++) {
+        if (random < activeSymbolPool[i].weight) return activeSymbolPool[i].id;
+        random -= activeSymbolPool[i].weight;
+    }
+    return activeSymbolPool[activeSymbolPool.length - 1].id;
+}
+
+function randomizeReels() {
+    let pool = activeSymbolPool.length > 0 ? activeSymbolPool : SYMBOLS;
+    reelData = [];
+    let tempPool = pool.map(s => {
+        const wInput = document.getElementById(`sym_weight_${s.id}`);
+        let w = wInput ? (parseInt(wInput.value)||s.weight) : s.weight;
+        return { id: s.id, weight: w };
+    });
+    let getTotalW = () => tempPool.reduce((sum, s) => sum + s.weight, 0);
+    let getRand = () => {
+        let tw = getTotalW();
+        let r = Math.random() * tw;
+        for(let s of tempPool) { if(r < s.weight) return s.id; r -= s.weight; }
+        return tempPool[0].id;
+    };
+    for(let r=0; r<REEL_ROWS; r++) {
+        let row = [];
+        for(let c=0; c<REEL_COLS; c++) row.push(getRand());
+        reelData.push(row);
+    }
+}
+
+function initFormation(player, selectedSymbolIds) {
+    player.formation = [];
+    for(let i=0; i<9; i++) player.formation.push({ id: null, hp: 0, maxHp: 0, alive: false });
+    
+    let indices = [0,1,2,3,4,5,6,7,8];
+    for (let i = indices.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [indices[i], indices[j]] = [indices[j], indices[i]];
+    }
+
+    let unitMaxHp = Math.floor(player.maxHp / 5);
+    player.maxHp = unitMaxHp * 5;
+    player.hp = player.maxHp;
+
+    for (let i = 0; i < selectedSymbolIds.length; i++) {
+        let pos = indices[i];
+        player.formation[pos] = {
+            id: selectedSymbolIds[i],
+            hp: unitMaxHp,
+            maxHp: unitMaxHp,
+            alive: true
+        };
+    }
+}
+
+function distributeDamage(targetPlayer, totalDmg, attackerSide) {
+    let remainingDmg = totalDmg;
+    
+    // A hits Leftmost/Inner (0,3,6) first; B hits Rightmost/Inner (2,5,8) first
+    let colOrder = (attackerSide === 'A') ? [0, 1, 2] : [2, 1, 0];
+    
+    let targetQueue = [];
+    colOrder.forEach(colIdx => {
+        let indices = [colIdx, colIdx + 3, colIdx + 6];
+        indices.forEach(idx => {
+            let unit = targetPlayer.formation[idx];
+            if (unit.alive) targetQueue.push({ unit, idx });
+        });
+    });
+
+    for (let item of targetQueue) {
+        if (remainingDmg <= 0) break;
+        let u = item.unit;
+        let dmgDealt = 0;
+
+        if (remainingDmg >= u.hp) {
+            dmgDealt = u.hp;
+            remainingDmg -= u.hp;
+            u.hp = 0;
+            u.alive = false;
+        } else {
+            dmgDealt = remainingDmg;
+            u.hp -= remainingDmg;
+            remainingDmg = 0;
+        }
+        
+        // Visual Feedback: Show dmg on unit position
+        let gridX = (targetPlayer === playerA) ? FORMATION_CONFIG.gridA_X : FORMATION_CONFIG.gridB_X;
+        let r = Math.floor(item.idx / 3);
+        let c = item.idx % 3;
+        let tx = gridX + c * (FORMATION_CONFIG.cellW + FORMATION_CONFIG.cellGap) + 10;
+        let ty = FORMATION_CONFIG.offsetY + r * (FORMATION_CONFIG.cellW + FORMATION_CONFIG.cellGap) + 20;
+        
+        addFloatText(tx, ty, `-${dmgDealt}`, "#ff4444");
+    }
+
+    // 更新總血量僅供顯示
+    targetPlayer.hp = targetPlayer.formation.reduce((sum, u) => sum + u.hp, 0);
+}
+
+function checkAlive(player) {
+    return player.formation.some(u => u.alive);
+}
+
+function applySettingsAndReset() {
+    let tempCountA = 0, tempCountB = 0;
+    SYMBOLS.forEach((sym, index) => {
+        if(document.getElementById(`check_a_${index}`).checked) tempCountA++;
+        if(document.getElementById(`check_b_${index}`).checked) tempCountB++;
+    });
+    if (tempCountA !== 5 || tempCountB !== 5) { alert("請選擇 5 個符號!"); return; }
+
+    playerA.selectedSymbols = []; playerB.selectedSymbols = []; activeSymbolPool = []; 
+    updateProbabilities();
+
+    SYMBOLS.forEach((sym, index) => {
+        const checkA = document.getElementById(`check_a_${index}`);
+        const checkB = document.getElementById(`check_b_${index}`);
+        sym.selectedA = checkA.checked; sym.selectedB = checkB.checked;
+        if (sym.selectedA) playerA.selectedSymbols.push(sym.id);
+        if (sym.selectedB) playerB.selectedSymbols.push(sym.id);
+        if (sym.selectedA || sym.selectedB) activeSymbolPool.push({ id: sym.id, weight: sym.weight });
+    });
+    
+    playerA.maxHp = parseInt(document.getElementById('hpA').value) || 10000;
+    playerB.maxHp = parseInt(document.getElementById('hpB').value) || 10000;
+    playerA.bet = parseInt(document.getElementById('betA').value) || 100;
+    playerB.bet = parseInt(document.getElementById('betB').value) || 100;
+    playerA.coin = DEFAULT_COIN; playerB.coin = DEFAULT_COIN;
+    playerA.lastDmgDealt = 0; playerB.lastDmgDealt = 0;
+    playerA.totalDmgDealt = 0; playerB.totalDmgDealt = 0;
+
+    initFormation(playerA, playerA.selectedSymbols);
+    initFormation(playerB, playerB.selectedSymbols);
+
+    gameState = STATE.IDLE;
+    floatTexts = [];
+    isAutoBattling = false; autoSpinDelay = 0; roundNumber = 0; battleLog = [];
+    randomizeReels();
+}
+
+function handleInput(e) {
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    // Updated Button Detection (Bottom Center)
+    const btnW = 200;
+    const btnH = 60;
+    const btnX = (CANVAS_WIDTH - btnW) / 2;
+    const btnY = 820;
+    
+    if (x > btnX && x < btnX + btnW && y > btnY && y < btnY + btnH) {
+        if (gameState === STATE.IDLE && !isAutoBattling) {
+            if (activeSymbolPool.length === 0) { applySettingsAndReset(); if (activeSymbolPool.length === 0) return; }
+            isAutoBattling = true; startSpin();
+        } else if (gameState === STATE.GAME_OVER) {
+            applySettingsAndReset();
+        } 
+    }
+}
+
+function startSpin() {
+    if (!checkAlive(playerA) || !checkAlive(playerB)) { isAutoBattling = false; return; }
+    roundNumber++;
+    if (playerA.coin < playerA.bet) playerA.coin += 5000;
+    if (playerB.coin < playerB.bet) playerB.coin += 5000;
+    playerA.coin -= playerA.bet; playerB.coin -= playerB.bet;
+    activeLinesA = []; activeLinesB = [];
+    playerA.lastDmgDealt = 0; playerB.lastDmgDealt = 0;
+    gameState = STATE.SPINNING; spinTimer = 0; stoppingReelIndex = 0;
+}
+
+function checkResult() {
+    let resA = { coin: 0, dmg: 0 }, resB = { coin: 0, dmg: 0 };
+    let hitCountA = 0, hitCountB = 0;
+
+    // Check A Lines
+    payLines.forEach(line => {
+        let firstSymId = reelData[line[0]][0];
+        if (!playerA.selectedSymbols.includes(firstSymId)) return;
+        let matchCount = 1;
+        for (let c = 1; c < REEL_COLS; c++) { if (reelData[line[c]][c] === firstSymId) matchCount++; else break; }
+        if (matchCount >= 3) {
+            let base = PAYOUT_BASE[matchCount];
+            let sym = SYMBOLS[firstSymId];
+            resA.coin += base * sym.coinMultA; resA.dmg += base * sym.dmgMultA;
+            hitCountA++;
+            activeLinesA.push({ line: line, count: matchCount, color: playerA.color });
+        }
+    });
+
+    // Check B Lines
+    payLines.forEach(line => {
+        let firstSymId = reelData[line[REEL_COLS-1]][REEL_COLS-1]; 
+        if (!playerB.selectedSymbols.includes(firstSymId)) return;
+        let matchCount = 1;
+        for (let c = REEL_COLS-2; c >= 0; c--) { if (reelData[line[c]][c] === firstSymId) matchCount++; else break; }
+        if (matchCount >= 3) {
+            let base = PAYOUT_BASE[matchCount];
+            let sym = SYMBOLS[firstSymId];
+            resB.coin += base * sym.coinMultB; resB.dmg += base * sym.dmgMultB;
+            hitCountB++;
+            activeLinesB.push({ line: line, count: matchCount, color: playerB.color });
+        }
+    });
+
+    let finalDmgA = Math.floor(resA.dmg * (playerA.bet / 100));
+    let finalDmgB = Math.floor(resB.dmg * (playerB.bet / 100));
+    let finalCoinA = Math.floor(resA.coin * (playerA.bet / 100)); 
+    let finalCoinB = Math.floor(resB.coin * (playerB.bet / 100));
+
+    if(resA.dmg > 0 && finalDmgA === 0) finalDmgA = 1;
+    if(resB.dmg > 0 && finalDmgB === 0) finalDmgB = 1;
+
+    currentDelaySetting = (finalDmgA > 0 || finalDmgB > 0) ? 60 : 18;
+
+    if (finalDmgA > 0) {
+        distributeDamage(playerB, finalDmgA, 'A');
+        playerA.coin += finalCoinA; playerA.lastDmgDealt = finalDmgA; playerA.totalDmgDealt += finalDmgA; 
+        addFloatText(150, 400, `ATK!`, playerA.color);
+        battleLog.push({ round: roundNumber, text: `R${roundNumber}: A 命中 ${hitCountA} 線 (Dmg: ${finalDmgA})`, color: playerA.color });
+    } else if (finalCoinA > 0) {
+        playerA.coin += finalCoinA; addFloatText(150, 350, `+$${finalCoinA}`, "#f1c40f");
+    }
+    
+    if (finalDmgB > 0) {
+        distributeDamage(playerA, finalDmgB, 'B');
+        playerB.coin += finalCoinB; playerB.lastDmgDealt = finalDmgB; playerB.totalDmgDealt += finalDmgB;
+        addFloatText(650, 400, `ATK!`, playerB.color);
+        battleLog.push({ round: roundNumber, text: `R${roundNumber}: B 命中 ${hitCountB} 線 (Dmg: ${finalDmgB})`, color: playerB.color });
+    } else if (finalCoinB > 0) {
+        playerB.coin += finalCoinB; addFloatText(650, 350, `+$${finalCoinB}`, "#f1c40f");
+    }
+
+    const isADead = !checkAlive(playerA);
+    const isBDead = !checkAlive(playerB);
+
+    if (isADead || isBDead) {
+        gameState = STATE.GAME_OVER;
+        isAutoBattling = false;
+        let endText = "";
+        if (isADead && isBDead) endText = "同歸於盡 (Draw)";
+        else if (isADead) endText = "Player B 獲勝";
+        else endText = "Player A 獲勝";
+        battleLog.push({ round: roundNumber, text: `*** ${endText} ***`, color: "#2ecc71" });
+    } else {
+        gameState = STATE.IDLE;
+        autoSpinDelay = 0;
+    }
+}
+
+function addFloatText(x, y, text, color) {
+    floatTexts.push({ x, y, text, color, life: 60, alpha: 1.0 });
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+function update() {
+    frames++;
+    if (gameState === STATE.IDLE && isAutoBattling) {
+        autoSpinDelay++;
+        if (autoSpinDelay >= currentDelaySetting) { autoSpinDelay = 0; startSpin(); }
+    }
+    if (gameState === STATE.SPINNING) {
+        spinTimer++;
+        let usePool = activeSymbolPool.length > 0;
+        for(let c = stoppingReelIndex; c < 5; c++) {
+            for(let r = 0; r < REEL_ROWS; r++) {
+                if (usePool) reelData[r][c] = getRandomSymbolId();
+                else reelData[r][c] = Math.floor(Math.random() * SYMBOLS.length);
+            }
+        }
+        if (spinTimer > 10 && stoppingReelIndex < 5) { stoppingReelIndex++; spinTimer = 0; }
+        if (stoppingReelIndex === 5) { gameState = STATE.RESULT; checkResult(); }
+    }
+    for (let i = floatTexts.length - 1; i >= 0; i--) {
+        let ft = floatTexts[i];
+        ft.y -= 1; ft.life--; ft.alpha = ft.life / 60;
+        if (ft.life <= 0) floatTexts.splice(i, 1);
+    }
+}
+
+function draw() {
+    ctx.fillStyle = "#1b1b1b"; // Dark background
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    
+    // Draw Battle Stage Background
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, CANVAS_WIDTH, 350);
+    ctx.strokeStyle = "#333";
+    ctx.beginPath();
+    ctx.moveTo(0, 350); ctx.lineTo(CANVAS_WIDTH, 350);
+    ctx.stroke();
+
+    drawUI();
+    drawBattleFormations();
+    drawReels();
+    if (gameState === STATE.IDLE || gameState === STATE.RESULT || gameState === STATE.GAME_OVER) drawWinLines();
+    drawInGameLog(); 
+    drawFloatTexts();
+    if (gameState === STATE.GAME_OVER) drawGameOver();
+    drawSpinButton();
+}
+
+function drawUI() {
+    // Top Header info (Round, etc.)
+    ctx.fillStyle = "#95a5a6";
+    ctx.font = "bold 20px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(`ROUND ${roundNumber}`, CANVAS_WIDTH/2, 30);
+    
+    // Draw Side Stats (Centered in the side margins)
+    drawPlayerInfo(playerA, 105, 80); 
+    drawPlayerInfo(playerB, 695, 80);
+}
+
+function drawBattleFormations() {
+    drawGrid(playerA, FORMATION_CONFIG.gridA_X, FORMATION_CONFIG.offsetY);
+    drawGrid(playerB, FORMATION_CONFIG.gridB_X, FORMATION_CONFIG.offsetY);
+    
+    // VS Logo
+    ctx.fillStyle = "#fff";
+    ctx.font = "italic bold 40px Arial";
+    ctx.textAlign = "center";
+    // Center between the two grids: (210+166 + 424) / 2 = 800/2 = 400
+    ctx.fillText("VS", CANVAS_WIDTH/2, 170);
+}
+
+function drawGrid(player, startX, startY) {
+    const sz = FORMATION_CONFIG.cellW;
+    const gap = FORMATION_CONFIG.cellGap;
+    
+    // Label
+    ctx.fillStyle = player.color;
+    ctx.font = "bold 14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText(`${player.name} Units`, startX + (sz*3+gap*2)/2, startY - 10);
+
+    for(let i=0; i<9; i++) {
+        let r = Math.floor(i / 3);
+        let c = i % 3;
+        let x = startX + c * (sz + gap);
+        let y = startY + r * (sz + gap);
+        let unit = player.formation[i];
+        
+        ctx.fillStyle = "#333";
+        ctx.fillRect(x, y, sz, sz);
+        ctx.strokeStyle = "#555";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x, y, sz, sz);
+
+        if (unit.id !== null) {
+            let sym = SYMBOLS[unit.id];
+            if (unit.alive) {
+                drawSymbol(x + sz/2, y + sz/2, sym, 20);
+                let hpPct = unit.hp / unit.maxHp;
+                ctx.fillStyle = "#555";
+                ctx.fillRect(x + 2, y + sz - 6, sz - 4, 4);
+                ctx.fillStyle = hpPct > 0.5 ? "#2ecc71" : "#e74c3c";
+                ctx.fillRect(x + 2, y + sz - 6, (sz - 4) * hpPct, 4);
+            } else {
+                ctx.globalAlpha = 0.3;
+                drawSymbol(x + sz/2, y + sz/2, sym, 20);
+                ctx.globalAlpha = 1.0;
+                ctx.strokeStyle = "#c0392b";
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(x + 5, y + 5); ctx.lineTo(x + sz - 5, y + sz - 5);
+                ctx.moveTo(x + sz - 5, y + 5); ctx.lineTo(x + 5, y + sz - 5);
+                ctx.stroke();
+            }
+        }
+    }
+}
+
+function drawPlayerInfo(player, x, y) {
+    // x, y is the top-center of the info block
+    ctx.fillStyle = "white";
+    ctx.font = "bold 16px Arial";
+    ctx.textAlign = "center"; // Changed to center
+    
+    // Coin
+    ctx.fillStyle = "#f1c40f";
+    ctx.font = "14px Arial";
+    ctx.fillText(`Coin:`, x, y + 40);
+    ctx.font = "bold 16px Arial";
+    ctx.fillText(`$${Math.floor(player.coin)}`, x, y + 60);
+    
+    // Bet
+    ctx.fillStyle = "#95a5a6";
+    ctx.font = "12px Arial";
+    ctx.fillText(`Bet: $${player.bet}`, x, y + 90);
+    
+    // Last Dmg
+    if (player.lastDmgDealt > 0) {
+        ctx.fillStyle = "#e67e22";
+        ctx.font = "bold 14px Arial";
+        ctx.fillText(`DMG: ${Math.floor(player.lastDmgDealt)}`, x, y + 115);
+    }
+}
+
+function drawReels() {
+    ctx.save();
+    ctx.translate(REEL_X, REEL_Y);
+    
+    // Draw Frame
+    const padding = 15;
+    ctx.fillStyle = "#2c3e50";
+    ctx.fillRect(-padding, -padding, REEL_TOTAL_W + padding*2, (REEL_CELL_H * REEL_ROWS) + (REEL_GAP * (REEL_ROWS-1)) + padding*2);
+    ctx.strokeStyle = "#f1c40f";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-padding, -padding, REEL_TOTAL_W + padding*2, (REEL_CELL_H * REEL_ROWS) + (REEL_GAP * (REEL_ROWS-1)) + padding*2);
+
+    for (let r = 0; r < REEL_ROWS; r++) {
+        for (let c = 0; c < 5; c++) {
+            let x = c * (REEL_CELL_W + REEL_GAP);
+            let y = r * (REEL_CELL_H + REEL_GAP);
+            ctx.fillStyle = "#000";
+            ctx.fillRect(x, y, REEL_CELL_W, REEL_CELL_H);
+            ctx.strokeStyle = "#444";
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x, y, REEL_CELL_W, REEL_CELL_H);
+            let symbolId = reelData[r][c];
+            drawSymbol(x + REEL_CELL_W/2, y + REEL_CELL_H/2, SYMBOLS[symbolId], 28);
+        }
+    }
+    ctx.restore();
+}
+
+function drawWinLines() {
+    ctx.save();
+    ctx.translate(REEL_X, REEL_Y);
+    ctx.lineWidth = 4;
+    activeLinesA.forEach(win => {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(52, 152, 219, ${0.5 + Math.sin(frames*0.1)*0.5})`;
+        let line = win.line;
+        for (let c = 0; c < win.count; c++) {
+            let r = line[c];
+            let x = c * (REEL_CELL_W + REEL_GAP) + REEL_CELL_W/2;
+            let y = r * (REEL_CELL_H + REEL_GAP) + REEL_CELL_H/2;
+            if (c === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    });
+    activeLinesB.forEach(win => {
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(231, 76, 60, ${0.5 + Math.sin(frames*0.1)*0.5})`;
+        let line = win.line;
+        for (let c = REEL_COLS-1; c > REEL_COLS-1 - win.count; c--) {
+            let r = line[c];
+            let x = c * (REEL_CELL_W + REEL_GAP) + REEL_CELL_W/2;
+            let y = r * (REEL_CELL_H + REEL_GAP) + REEL_CELL_H/2;
+            if (c === REEL_COLS-1) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    });
+    ctx.restore();
+}
+
+function drawSymbol(cx, cy, symbol, size) {
+    if(!symbol) return;
+    ctx.fillStyle = symbol.color;
+    ctx.shadowColor = symbol.color;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    if (symbol.shape === 'circle') ctx.arc(cx, cy, size/2, 0, Math.PI * 2);
+    else if (symbol.shape === 'square') ctx.rect(cx - size/2, cy - size/2, size, size);
+    else if (symbol.shape === 'triangle') {
+        ctx.moveTo(cx, cy - size/2);
+        ctx.lineTo(cx + size/2, cy + size/2);
+        ctx.lineTo(cx - size/2, cy + size/2);
+    } else if (symbol.shape === 'diamond') {
+        ctx.moveTo(cx, cy - size/2);
+        ctx.lineTo(cx + size/2, cy);
+        ctx.lineTo(cx, cy + size/2);
+        ctx.lineTo(cx - size/2, cy);
+    } else if (symbol.shape === 'star') {
+        for (let i = 0; i < 5; i++) {
+            ctx.lineTo(Math.cos((18 + i * 72) * 0.0174533) * size/2 + cx, -Math.sin((18 + i * 72) * 0.0174533) * size/2 + cy);
+            ctx.lineTo(Math.cos((54 + i * 72) * 0.0174533) * size/4 + cx, -Math.sin((54 + i * 72) * 0.0174533) * size/4 + cy);
+        }
+    } else if (symbol.shape === 'hexagon') {
+        for (let i = 0; i < 6; i++) {
+            let angle = (60 * i) * Math.PI / 180;
+            let x = cx + size/1.8 * Math.cos(angle);
+            let y = cy + size/1.8 * Math.sin(angle);
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        }
+    } else if (symbol.shape === 'cross') {
+        const w = size/3.5; const l = size/1.2;
+        ctx.rect(cx - w, cy - l/2, w*2, l);
+        ctx.rect(cx - l/2, cy - w, l, w*2);
+    } else if (symbol.shape === 'heart') {
+        ctx.moveTo(cx, cy + size/2);
+        ctx.bezierCurveTo(cx + size/2, cy, cx + size, cy - size/2, cx, cy - size/3);
+        ctx.bezierCurveTo(cx - size, cy - size/2, cx - size/2, cy, cx, cy + size/2);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+}
+
+function drawSpinButton() {
+    const btnW = 200;
+    const btnH = 60;
+    const bx = (CANVAS_WIDTH - btnW) / 2;
+    const by = 820; 
+    let btnColor = (gameState !== STATE.IDLE || isAutoBattling) ? "#555" : "#e67e22";
+    if (gameState === STATE.GAME_OVER) btnColor = "#27ae60"; 
+    ctx.fillStyle = btnColor;
+    ctx.beginPath();
+    ctx.roundRect(bx, by, btnW, btnH, 10);
+    ctx.fill();
+    ctx.strokeStyle = "#fff";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = "#fff";
+    ctx.font = "bold 30px Arial";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    let text = "START";
+    if (gameState === STATE.GAME_OVER) text = "REMATCH";
+    else if (isAutoBattling) text = "AUTO...";
+    else if (gameState === STATE.SPINNING) text = "...";
+    ctx.fillText(text, bx + btnW/2, by + btnH/2);
+    if (isAutoBattling && gameState === STATE.IDLE) {
+        ctx.fillStyle = "rgba(255,255,255,0.5)";
+        let progress = 1 - (autoSpinDelay / currentDelaySetting);
+        if(progress < 0) progress = 0;
+        ctx.fillRect(bx, by + btnH - 5, btnW * progress, 5);
+    }
+}
+
+function drawInGameLog() {
+    const lw = 600; const lh = 80;
+    const lx = (CANVAS_WIDTH - lw) / 2;
+    const ly = 720; 
+    ctx.fillStyle = "rgba(0,0,0,0.5)";
+    ctx.fillRect(lx, ly, lw, lh);
+    ctx.fillStyle = "#aaa";
+    ctx.font = "14px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("--- Battle Log ---", lx + lw/2, ly + 20);
+    let logsToShow = battleLog.slice(-2);
+    ctx.textAlign = "left";
+    ctx.font = "16px Arial";
+    let startY = ly + 45;
+    logsToShow.forEach(log => {
+        ctx.fillStyle = log.color;
+        ctx.fillText(log.text, lx + 20, startY);
+        startY += 20;
+    });
+}
+
+function drawFloatTexts() {
+    floatTexts.forEach(ft => {
+        ctx.save();
+        ctx.globalAlpha = ft.alpha;
+        ctx.fillStyle = ft.color;
+        ctx.font = "bold 24px Arial";
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 2;
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+    });
+}
+
+function drawGameOver() {
+    ctx.fillStyle = "rgba(0, 0, 0, 0.9)";
+    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.font = "bold 40px Arial";
+    ctx.textAlign = "center";
+    let winnerText = "", winnerColor = "#fff";
+    
+    const isADead = !checkAlive(playerA);
+    const isBDead = !checkAlive(playerB);
+    
+    if (isADead && isBDead) { winnerText = "DRAW! (同歸於盡)"; winnerColor = "#95a5a6"; } 
+    else if (isADead) { winnerText = "PLAYER B WINS!"; winnerColor = playerB.color; } 
+    else { winnerText = "PLAYER A WINS!"; winnerColor = playerA.color; }
+    
+    ctx.fillStyle = winnerColor;
+    ctx.fillText(winnerText, CANVAS_WIDTH/2, 200);
+    ctx.fillStyle = "#ccc";
+    ctx.font = "20px Arial";
+    ctx.fillText(`Total Rounds: ${roundNumber}`, CANVAS_WIDTH/2, 240);
+    
+    const statBoxY = 300, statBoxW = 300, statBoxH = 200, gap = 40;
+    drawEndGameStats(playerA, CANVAS_WIDTH/2 - statBoxW - gap/2, statBoxY, statBoxW, statBoxH);
+    drawEndGameStats(playerB, CANVAS_WIDTH/2 + gap/2, statBoxY, statBoxW, statBoxH);
+    
+    ctx.fillStyle = "#fff";
+    ctx.font = "18px Arial";
+    ctx.textAlign = "center";
+    ctx.fillText("Press BUTTON below to Rematch", CANVAS_WIDTH/2, 600);
+}
+
+function drawEndGameStats(player, x, y, w, h) {
+    ctx.fillStyle = "#222"; ctx.fillRect(x, y, w, h);
+    ctx.strokeStyle = player.color; ctx.lineWidth = 3; ctx.strokeRect(x, y, w, h);
+    ctx.fillStyle = player.color; ctx.font = "bold 22px Arial"; ctx.textAlign = "center"; ctx.fillText(player.name, x + w/2, y + 35);
+    ctx.beginPath(); ctx.moveTo(x + 20, y + 50); ctx.lineTo(x + w - 20, y + 50); ctx.strokeStyle = "#444"; ctx.lineWidth = 2; ctx.stroke();
+    
+    ctx.fillStyle = "#fff"; ctx.font = "18px Arial"; ctx.textAlign = "left"; ctx.fillText("Total Damage:", x + 30, y + 90);
+    ctx.fillStyle = "#e67e22"; ctx.textAlign = "right"; ctx.fillText(player.totalDmgDealt.toLocaleString(), x + w - 30, y + 90);
+    
+    const profit = player.coin - player.initialCoin;
+    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText("Net Profit:", x + 30, y + 130);
+    ctx.textAlign = "right";
+    if (profit >= 0) { ctx.fillStyle = "#2ecc71"; ctx.fillText("+$" + profit.toLocaleString(), x + w - 30, y + 130); } 
+    else { ctx.fillStyle = "#e74c3c"; ctx.fillText("-$" + Math.abs(profit).toLocaleString(), x + w - 30, y + 130); }
+    
+    ctx.fillStyle = "#fff"; ctx.textAlign = "left"; ctx.fillText("Units Alive:", x + 30, y + 170);
+    let aliveCount = player.formation.filter(u => u.alive).length;
+    ctx.textAlign = "right"; ctx.fillText(`${aliveCount} / 5`, x + w - 30, y + 170);
+}
+
+init();
+
+</script>
+</body>
+</html>

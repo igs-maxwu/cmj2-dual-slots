@@ -1,0 +1,265 @@
+/* ============================================================================
+   Dual Slots Battle — Design Tokens
+   Ported 1:1 from ClaudeAI/DualSlot/src/config/DesignTokens.ts
+   (Phaser hex ints → CSS hex strings; semantics preserved.)
+   ============================================================================ */
+
+/* ─── Webfonts ────────────────────────────────────────────────────────────── */
+/* The in-game font stack is 'Arial, sans-serif' (FONT.base / FONT.bold).
+   For the design system / marketing surfaces we pair it with two accent faces:
+     • Cinzel — gilded, mystical, used for CAPS HEADERS ("PLAYER A", "VS")
+     • Noto Sans TC — Traditional Chinese body (spirit names 蒼嵐, 玄墨, etc.)
+   Both substitutions are documented in README.md. */
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700;900&family=Noto+Serif+TC:wght@500;700;900&display=swap');
+
+:root {
+  /* ─── Color Palette — Base ─────────────────────────────────────────────── */
+  /* Dark battle-room backgrounds */
+  --bg:              #0f0f1a;
+  --bg-panel:        #1a1a2e;
+  --bg-cell:         #16213e;
+  --bg-reel:         #0d0d1a;
+
+  /* Borders */
+  --border-normal:   #334466;
+  --border-gold:     #f1c40f;
+  --border-a:        #3498db;
+  --border-b:        #e74c3c;
+
+  /* ─── Color Palette — Player Teams ─────────────────────────────────────── */
+  --player-a:        #3498db;   /* Player A — cerulean blue */
+  --player-b:        #e74c3c;   /* Player B — vermilion red */
+
+  /* ─── Color Palette — Neutrals ─────────────────────────────────────────── */
+  --white:           #ffffff;
+  --text-muted:      #7f8c9a;
+  --text-soft:       #b7c0cc;
+
+  /* ─── Color Palette — HP State ─────────────────────────────────────────── */
+  --hp-high:         #2ecc71;
+  --hp-mid:          #e67e22;
+  --hp-low:          #e74c3c;
+  --hp-bg:           #333333;
+
+  /* ─── Color Palette — Button States ────────────────────────────────────── */
+  --btn-idle:        #e67e22;
+  --btn-hover:       #f39c12;
+  --btn-pressed:     #b35900;
+  --btn-disabled:    #555555;
+  --btn-rematch:     #27ae60;
+
+  /* ─── Color Palette — FX ───────────────────────────────────────────────── */
+  --coin:            #f1c40f;
+  --dmg-float:       #ff4444;
+  --heal-float:      #2ecc71;
+  --skill-accent:    #b5179e;     /* Magenta for skill-triggered flash */
+
+  /* ─── Color Palette — Symbol / Element Reel Suits ──────────────────────── */
+  /* Man (萬) — red tile family */
+  --sym-man-1:       #FF6B6B;
+  --sym-man-5:       #E63946;
+  --sym-man-9:       #9B1B30;
+  /* Pin (筒) — blue tile family */
+  --sym-pin-1:       #48CAE4;
+  --sym-pin-5:       #0096C7;
+  --sym-pin-9:       #023E8A;
+  /* Sou (索) — green tile family */
+  --sym-sou-1:       #52B788;
+  --sym-sou-5:       #2D6A4F;
+  --sym-sou-9:       #1B4332;
+  /* Honor — yellow/white/gold */
+  --sym-feng:        #FFD166;
+  --sym-zhong:       #EF9B0F;
+  --sym-bai:         #F8F9FA;
+  /* Wild (雀王) — magenta */
+  --sym-wild:        #B5179E;
+
+  /* ─── Four Beasts (四靈) Element Colors ───────────────────────────────── */
+  --beast-azure:     #52B788;   /* 青龍 — AzureDragon / sou */
+  --beast-white:     #E63946;   /* 白虎 — WhiteTiger / man */
+  --beast-vermilion: #EF9B0F;   /* 朱雀 — VermilionBird / honor */
+  --beast-black:     #0096C7;   /* 玄武 — BlackTortoise / pin */
+
+  /* ─── Typography ───────────────────────────────────────────────────────── */
+  --font-ui:      'Arial', 'Helvetica Neue', 'Segoe UI', sans-serif;
+  --font-display: 'Cinzel', 'Arial Black', serif;     /* Headers, titles */
+  --font-zh:      'Noto Sans TC', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+  --font-zh-serif:'Noto Serif TC', 'Songti TC', serif;
+  --font-mono:    'SFMono-Regular', 'Menlo', 'Consolas', monospace;
+
+  /* Ported from FONT_SIZE (tokens) */
+  --fs-xs:  11px;
+  --fs-sm:  13px;
+  --fs-md:  16px;
+  --fs-lg:  20px;
+  --fs-xl:  26px;
+  --fs-xxl: 36px;
+  /* Marketing-level sizes beyond in-game */
+  --fs-display-sm: 48px;
+  --fs-display-md: 72px;
+  --fs-display-lg: 120px;
+
+  /* ─── Spacing (derived from 4px grid, matches 52/56/96 pixel blocks) ───── */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-14: 56px;        /* btnH */
+  --space-16: 64px;
+
+  /* ─── Radii ───────────────────────────────────────────────────────────── */
+  /* The game itself uses NO border-radius — all cells are hard rectangles.
+     Documented here for marketing surfaces that need softer chrome. */
+  --r-none: 0;
+  --r-sm:   2px;
+  --r-md:   4px;
+  --r-lg:   8px;
+  --r-pill: 9999px;
+
+  /* ─── Shadows / Elevation ─────────────────────────────────────────────── */
+  --shadow-text:    0 2px 0 rgba(0, 0, 0, 0.8);
+  --shadow-glow-a:  0 0 24px rgba(52, 152, 219, 0.55);   /* Player A blue glow */
+  --shadow-glow-b:  0 0 24px rgba(231, 76, 60, 0.55);    /* Player B red glow */
+  --shadow-glow-gold: 0 0 32px rgba(241, 196, 15, 0.6);  /* Win / reel border */
+  --shadow-panel:   inset 0 0 0 1px var(--border-normal);
+  --shadow-deep:    0 12px 40px rgba(0, 0, 0, 0.6);
+
+  /* ─── Layout Canvas ───────────────────────────────────────────────────── */
+  --canvas-w: 1280px;
+  --canvas-h: 720px;
+  --panel-w:  211px;        /* ~CANVAS_W * 0.165 */
+  --cell:     52px;         /* FormationGrid cell */
+  --cell-gap: 6px;
+  --reel-cell-w: 96px;
+  --reel-cell-h: 58px;
+  --reel-gap:    6px;
+
+  /* ─── Motion ──────────────────────────────────────────────────────────── */
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);    /* Cubic.easeOut */
+  --ease-back:  cubic-bezier(0.34, 1.56, 0.64, 1); /* Back.easeOut — spirit entrance */
+  --ease-sine:  cubic-bezier(0.37, 0, 0.63, 1);    /* Sine */
+  --dur-fast:   150ms;      /* hover */
+  --dur-med:    300ms;      /* HP bar tween */
+  --dur-slow:   600ms;      /* spirit entrance */
+  --dur-spin:   2000ms;     /* SPIN_DURATION_MS */
+}
+
+/* ============================================================================
+   Semantic type roles — what to reach for when laying out a screen
+   ============================================================================ */
+
+.ds-h1 {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-display-md);
+  letter-spacing: 0.04em;
+  color: var(--white);
+  text-transform: uppercase;
+  text-shadow: var(--shadow-text);
+  line-height: 1.05;
+}
+
+.ds-h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: var(--fs-xxl);
+  letter-spacing: 0.08em;
+  color: var(--white);
+  text-transform: uppercase;
+  line-height: 1.1;
+}
+
+.ds-h3 {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-xl);
+  letter-spacing: 0.02em;
+  color: var(--white);
+}
+
+.ds-vs {                   /* The "VS" label in the arena */
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-size: var(--fs-xxl);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.2em;
+}
+
+.ds-player-label {         /* "PLAYER A" / "PLAYER B" panel header */
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+}
+.ds-player-label.a { color: var(--player-a); }
+.ds-player-label.b { color: var(--player-b); }
+
+.ds-coin-value {           /* "$1,000" the gold number under the grid */
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-md);
+  color: var(--coin);
+  font-variant-numeric: tabular-nums;
+}
+
+.ds-caption {              /* "COIN", "BET: $100" */
+  font-family: var(--font-ui);
+  font-size: var(--fs-xs);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.ds-body {
+  font-family: var(--font-ui);
+  font-size: var(--fs-md);
+  color: var(--text-soft);
+  line-height: 1.55;
+}
+
+.ds-body-sm {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.ds-log-line {
+  font-family: var(--font-ui);
+  font-size: var(--fs-sm);
+  color: var(--white);
+  line-height: 1.35;
+}
+
+.ds-skill-name {           /* Magenta skill ticker on panels */
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-sm);
+  color: var(--skill-accent);
+  letter-spacing: 0.04em;
+}
+
+.ds-zh-name {              /* 蒼嵐, 玄墨 etc. — spirit cards, big characters */
+  font-family: var(--font-zh-serif);
+  font-weight: 900;
+  color: var(--white);
+}
+
+.ds-mono {
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+}
+
+.ds-button-label {
+  font-family: var(--font-ui);
+  font-weight: 700;
+  font-size: var(--fs-lg);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--white);
+}

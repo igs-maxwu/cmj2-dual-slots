@@ -3,6 +3,7 @@ import { CANVAS_WIDTH, CANVAS_HEIGHT } from '@/config/GameConfig';
 import { BootScene }     from '@/scenes/BootScene';
 import { PreloadScene }  from '@/scenes/PreloadScene';
 import { MainMenuScene } from '@/scenes/MainMenuScene';
+import { DraftScene }    from '@/scenes/DraftScene';
 import { GameScene }     from '@/scenes/GameScene';
 import { GameOverScene } from '@/scenes/GameOverScene';
 
@@ -11,7 +12,7 @@ const config: Phaser.Types.Core.GameConfig = {
   width: CANVAS_WIDTH,
   height: CANVAS_HEIGHT,
   backgroundColor: '#061a33',   // --sea-abyss
-  scene: [BootScene, PreloadScene, MainMenuScene, GameScene, GameOverScene],
+  scene: [BootScene, PreloadScene, MainMenuScene, DraftScene, GameScene, GameOverScene],
   parent: document.body,
   scale: {
     mode: Phaser.Scale.FIT,

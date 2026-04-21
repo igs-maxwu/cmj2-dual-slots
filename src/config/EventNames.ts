@@ -31,6 +31,9 @@ export const EventNames = {
   // FX triggers (consumed by [The Illusionist])
   FX_WIN_CELEBRATION: 'fx:winCelebration',
   FX_REEL_STOP:       'fx:reelStop',
+
+  // Draft scene
+  DRAFT_COMPLETE:     'scene:draftComplete',
 } as const;
 
 export type EventName = typeof EventNames[keyof typeof EventNames];

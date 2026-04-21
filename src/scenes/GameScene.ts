@@ -5,7 +5,7 @@ import { EventNames } from '@/config/EventNames';
 import type { SkillResolvedPayload } from '@/config/EventNames';
 import { CANVAS_WIDTH, CANVAS_HEIGHT, REEL_COLS, REEL_ROWS, DEFAULT_BALANCE } from '@/config/GameConfig';
 import type { GameOverData } from '@/scenes/GameOverScene';
-import { COLORS, LAYOUT, FONT_SIZE, FONT, SEA } from '@/config/DesignTokens';
+import { COLORS, LAYOUT, FONT_SIZE, FONT, SEA, GOLD } from '@/config/DesignTokens';
 import { PlayerPanel }  from '@/objects/ui/PlayerPanel';
 import { ReelGrid }     from '@/objects/ui/ReelGrid';
 import { ReelSpinner }  from '@/objects/ui/ReelSpinner';
@@ -19,6 +19,12 @@ import {
   type SpiritDef, type PoolSymbol, type EvaluationResult, type Side,
 } from '@/systems/SlotEngine';
 import symbolsData from '@/config/symbols.json';
+import { GoldText } from '@/objects/ui/design/GoldText';
+import { PaytableStrip, PAYTABLE_W, PAYTABLE_H } from '@/objects/ui/PaytableStrip';
+import {
+  BigWinOverlay, BIG_WIN_DMG_THRESHOLD, MEGA_WIN_DMG_THRESHOLD,
+  type WinKind,
+} from '@/objects/ui/BigWinOverlay';
 
 type ExtSpiritDef = SpiritDef & { textureKey?: string };
 
@@ -30,12 +36,13 @@ type ExtSpiritDef = SpiritDef & { textureKey?: string };
  */
 export class GameScene extends Phaser.Scene {
   // ─── UI ──────────────────────────────────────────────────────────────────────
-  reelGrid!:    ReelGrid;
-  panelA!:      PlayerPanel;
-  panelB!:      PlayerPanel;
-  spinButton!:  SpinButton;
-  battleLog!:   BattleLog;
-  uiContainer!: Phaser.GameObjects.Container;
+  reelGrid!:      ReelGrid;
+  panelA!:        PlayerPanel;
+  panelB!:        PlayerPanel;
+  spinButton!:    SpinButton;
+  battleLog!:     BattleLog;
+  uiContainer!:   Phaser.GameObjects.Container;
+  private _bigWinOverlay!: BigWinOverlay;
 
   // ─── Systems ─────────────────────────────────────────────────────────────────
   private fxManager!:   FxManager;
@@ -99,10 +106,14 @@ export class GameScene extends Phaser.Scene {
 
     this.uiContainer.add([this.panelA, this.panelB, this.reelGrid, this.spinButton, this.battleLog]);
 
-    this._drawVsLabel();
+    this._drawCenterTitle();
     this._drawArenaBackground();
+    this._drawPaytableStrip();
     this._initBattle();
     this._setupListeners();
+
+    // BigWinOverlay is depth-100 and sits outside uiContainer (always on top)
+    this._bigWinOverlay = new BigWinOverlay(this);
 
     if (this._pendingRematch) {
       this._pendingRematch = false;
@@ -113,50 +124,126 @@ export class GameScene extends Phaser.Scene {
   // ─── Private ────────────────────────────────────────────────────────────────
 
   /**
-   * Paints the deep-sea backdrop: abyss base + vertical gradient up to the
-   * water-light band, with a faint caustic highlight across the upper third.
-   * Placeholder for the eventual painted hero illustration (see handoff
-   * README: "全畫面都是插畫式深海背景").
+   * Paints the deep-sea backdrop:
+   *   Layer 1 — solid sea-abyss base fill
+   *   Layer 2 — vertical gradient: sea-mid at top → sea-abyss at bottom
+   *   Layer 3 — caustic water-light fan spreading from the top-centre
+   *   Layer 4 — floor vignette: dark fade across the lower 180px
+   *
+   * This is the programmtic stand-in for the eventual painted hero
+   * illustration described in the design handoff README
+   * ("全畫面都是插畫式深海背景").
    */
   private _drawBackground(): void {
-    // Base fill (darkest: sea-abyss)
+    // Layer 1 — base fill (darkest: sea-abyss)
     this.add.rectangle(
       CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2,
       CANVAS_WIDTH, CANVAS_HEIGHT,
       SEA.abyss,
     );
 
-    // Vertical gradient: top abyss → bottom deep/mid. Uses a Graphics quad
-    // with fillGradientStyle so Phase 1 ships without a background texture.
-    const g = this.add.graphics();
-    g.fillGradientStyle(SEA.abyss, SEA.abyss, SEA.mid, SEA.deep, 1);
-    g.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    // Layer 2 — vertical gradient quad: lighter sea-mid at top, abyss at bottom
+    const grad = this.add.graphics();
+    grad.fillGradientStyle(SEA.mid, SEA.mid, SEA.abyss, SEA.abyss, 1);
+    grad.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
 
-    // Caustic light band near the top — faint horizontal highlight at ~32% height
-    const caustic = this.add.graphics();
-    caustic.fillGradientStyle(SEA.light, SEA.light, SEA.abyss, SEA.abyss, 0.22);
-    caustic.fillRect(0, 0, CANVAS_WIDTH, Math.round(CANVAS_HEIGHT * 0.32));
+    // Layer 3 — caustic water-light fan from the top-centre.
+    // Three overlapping gradient strips simulate the conic light bands from
+    // the GameScene.jsx design (conic-gradient not natively available in Phaser).
+    const BAND_H = Math.round(CANVAS_HEIGHT * 0.36);
+    const beams  = this.add.graphics();
+
+    // Central bright band
+    beams.fillGradientStyle(SEA.light, SEA.light, SEA.deep, SEA.deep, 0.28, 0.28, 0, 0);
+    beams.fillRect(CANVAS_WIDTH * 0.3, 0, CANVAS_WIDTH * 0.4, BAND_H);
+
+    // Left wing beam
+    beams.fillGradientStyle(SEA.caustic, SEA.light, SEA.abyss, SEA.deep, 0.12, 0.10, 0, 0);
+    beams.fillRect(0, 0, CANVAS_WIDTH * 0.4, BAND_H);
+
+    // Right wing beam
+    beams.fillGradientStyle(SEA.light, SEA.caustic, SEA.deep, SEA.abyss, 0.10, 0.12, 0, 0);
+    beams.fillRect(CANVAS_WIDTH * 0.6, 0, CANVAS_WIDTH * 0.4, BAND_H);
+
+    // Blend the whole caustic layer softly
+    beams.setBlendMode(Phaser.BlendModes.SCREEN);
+
+    // Layer 4 — floor vignette: darkens the bottom so buttons don't float
+    const floor = this.add.graphics();
+    floor.fillGradientStyle(SEA.abyss, SEA.abyss, SEA.abyss, SEA.abyss, 0, 0, 0.75, 0.75);
+    floor.fillRect(0, CANVAS_HEIGHT - 180, CANVAS_WIDTH, 180);
   }
 
+  /**
+   * Header bar and arena divider.
+   *
+   * Top-centre: "ROUND 00" counter (sea-muted, caps, letterSpacing feel via spaces)
+   *   — updates via ROUND_UPDATED event
+   * Full-width hairline at reelY separating the formation zone from the reel cage.
+   */
   private _drawArenaBackground(): void {
-    const sep = this.add.rectangle(CANVAS_WIDTH / 2, LAYOUT.reelY, CANVAS_WIDTH, 2, COLORS.borderNormal, 0.4);
+    // Thin gold hairline separating formation zone from reel cage
+    const sep = this.add.rectangle(
+      CANVAS_WIDTH / 2, LAYOUT.reelY - 1,
+      CANVAS_WIDTH, 1,
+      GOLD.base, 0.3,
+    );
     this.uiContainer.add(sep);
 
-    const roundText = this.add.text(CANVAS_WIDTH / 2, 14, 'ROUND 0', {
-      fontSize: `${FONT_SIZE.md}px`, fontFamily: FONT.bold, color: '#7f8c9a',
+    // ROUND counter — top-right of center column, same vertical as the title
+    const roundText = this.add.text(CANVAS_WIDTH / 2, 14, 'ROUND  00', {
+      fontSize:   `${FONT_SIZE.sm}px`,
+      fontFamily: FONT.body,
+      color:      '#7ea3c7',
     }).setOrigin(0.5, 0);
     this.uiContainer.add(roundText);
 
     EventBus.on(EventNames.ROUND_UPDATED, (data: { round: number }) => {
-      roundText.setText(`ROUND ${data.round}`);
+      roundText.setText(`ROUND  ${String(data.round).padStart(2, '0')}`);
     });
   }
 
-  private _drawVsLabel(): void {
-    const vsText = this.add.text(CANVAS_WIDTH / 2, LAYOUT.arenaH / 2, 'VS', {
-      fontSize: `${FONT_SIZE.xxl}px`, fontFamily: FONT.bold, color: '#ffffff',
-    }).setOrigin(0.5, 0.5).setAlpha(0.85);
-    this.uiContainer.add(vsText);
+  /**
+   * Calligraphy wordmark and subtitle in the centre column.
+   * Replaces the legacy "VS" label.
+   *
+   * Layout:
+   *   Y=62  — "雀靈戰記" hero title (GoldText, 56px display face)
+   *   Y=126 — "BATTLE OF SPIRITS" caps subtitle (sea-caustic, 11px body)
+   */
+  private _drawCenterTitle(): void {
+    const cx = CANVAS_WIDTH / 2;
+
+    // Hero wordmark — GoldText fakes the CSS gold gradient
+    const title = new GoldText(this, '雀靈戰記', {
+      fontSize:    FONT_SIZE.big,    // 56px — visible hero size
+      fontFamily:  FONT.display,
+      strokeWidth: 3,
+      glow:        true,
+      origin:      0.5,
+    });
+    title.setPosition(cx, 62);
+    this.uiContainer.add(title);
+
+    // "BATTLE OF SPIRITS" caps subtitle in sea-caustic blue
+    const sub = this.add.text(cx, 126, 'BATTLE OF SPIRITS', {
+      fontSize:   `${FONT_SIZE.xs}px`,
+      fontFamily: FONT.body,
+      color:      '#7ad7e8',
+    }).setOrigin(0.5, 0);
+    this.uiContainer.add(sub);
+  }
+
+  /**
+   * Paytable quickref strip — 5 top symbols with multipliers, placed just
+   * above the reel grid so players can check payouts at a glance.
+   * Horizontally centred in the canvas; vertically tucked 10 px above the reel.
+   */
+  private _drawPaytableStrip(): void {
+    const stripX = Math.round((CANVAS_WIDTH - PAYTABLE_W) / 2);
+    const stripY = LAYOUT.reelY - 10 - PAYTABLE_H;
+    const strip  = new PaytableStrip(this, stripX, stripY);
+    this.uiContainer.add(strip);
   }
 
   private _initBattle(): void {
@@ -403,10 +490,18 @@ export class GameScene extends Phaser.Scene {
       );
     }
 
-    // Win celebration FX
+    // Win celebration FX + BigWin overlay for large hits
     const maxDmg = Math.max(sideA.dmgDealt, sideB.dmgDealt);
     if (maxDmg > 0) {
       EventBus.emit(EventNames.FX_WIN_CELEBRATION, { dmg: maxDmg });
+
+      if (maxDmg >= BIG_WIN_DMG_THRESHOLD) {
+        const kind: WinKind = maxDmg >= MEGA_WIN_DMG_THRESHOLD ? 'mega' : 'big';
+        const payout = maxDmg * 8;   // rough visual payout (cosmetic only)
+        this.time.delayedCall(800, () => {
+          this._bigWinOverlay?.show(kind, payout);
+        });
+      }
     }
 
     // Game over check

@@ -27,6 +27,18 @@ export class PreloadScene extends Phaser.Scene {
   preload(): void {
     this._buildLoadingUI();
 
+    // Load NotoSansTC variable font from local assets (design-system canonical copy)
+    const notoFont = new FontFace(
+      'Noto Sans TC',
+      'url(assets/fonts/NotoSansTC-VariableFont_wght.ttf) format("truetype")',
+      { style: 'normal', weight: '100 900' }
+    );
+    notoFont.load().then((loaded) => {
+      document.fonts.add(loaded);
+    }).catch((err) => {
+      console.warn('[Preload] NotoSansTC font failed to load:', err);
+    });
+
     SPIRIT_ASSETS.forEach(({ key, path }) => this.load.image(key, path));
 
     this.load.on('progress', (value: number) => {

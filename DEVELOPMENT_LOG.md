@@ -115,3 +115,123 @@ src/
 1. **SK_VERDANT_DANCE (double_eval):** Consider capping at ×1.5 or requiring minMatch=4 on both allies before double activates. Current stack with Dragon Charge can produce ×5 total damage multiplier, which dominates once the symbol pool is balanced.
 2. **SK_PHOENIX_WING (skill_resonance):** Trigger rate is near zero because symbol 11 (Bai) has low pool weight. Either increase Bai's weight in symbols.json or relax minMatch to 2. No change made — Owner to decide.
 3. **RTP root cause is roster asymmetry, not skills.** Skills-on adds only ~+0.3% to each side's damage per match. Balance audit should be re-run after DraftScene equalization pass.
+
+---
+
+## R-Series Refactor: Skill System → Symbol-Based Dual Slots (2026-04-21)
+
+**Pivot summary:** Replaced the spirit-and-skill layer (T1.x) with a symbol-based dual-direction slot battle aligned with the reference demo. 9 commits in one day (R1 → R8 + one R7 fix) totaling removal of ~1,100 lines of skill code and addition of ~1,400 lines of symbol / battle / UI code.
+
+**Why:** The skill system audit (T1.2) flagged that RTP imbalance was driven by roster asymmetry, not skills — and that fixing the root cause required restructuring the symbol pool itself. Rather than patch the skill layer, Owner chose to rebuild on a symbol-first foundation where payline generation, scale calculation, and auto-balance all derive from the symbol config.
+
+---
+
+### R1 — Symbol Data Layer (`2686f6e`)
+
+**Scope:** `SymbolsConfig.ts` (8 symbols: id/name/shape/color/weight), `PaylinesGenerator.ts` (LCG generator matching reference demo `seed=12345` with boundary clamping), `SymbolPool.ts` (union pool builder), plus formation grid constants in `GameConfig.ts`.
+
+**Delta:** +115 / −0 across 4 files.
+
+---
+
+### R2 — Battle Core (`ab9d305`)
+
+**Scope:** `Formation.ts` (9-slot `FormationGrid`, Fisher-Yates shuffle matching reference demo, `isTeamAlive`, `teamHpTotal`). `DamageDistributor.ts` (column-priority distribution: A attacks col 0 first, B attacks col 2 first) with `DmgEvent` log.
+
+**Delta:** +91 / −0 across 2 files.
+
+---
+
+### R3 — Dual-Direction Slot Engine (`68a8f30`)
+
+**Scope:** `SlotEngine.ts` rewrite — A anchors at col 0 (left→right), B anchors at col 4 (right→left). Uses `PaylinesGenerator` + `SymbolPool` from R1. Scale multipliers via `(totalW/weight)^exp * scale`. Legacy stubs kept for `SkillResolver` / `SpiritRegistry` / `GameScene` until R5.
+
+**Delta:** 206 / −486 (net −280) in one file. Largest surface-area reduction of the series.
+
+---
+
+### R4 — Scale Calculator + Auto-Balance (`0510726`)
+
+**Scope:** `ScaleCalculator.ts` — three functions:
+- `calculateScales()`: expected-value formula `(prob^3/4/5 * payoutBase * dynMult * LINES_COUNT)` solves `coinScale` and `dmgScale` analytically.
+- `simulateWinRate()`: runs N full matches to measure actual A win rate.
+- `autoBalance()`: binary-searches `fairnessExp` in `[0.1, 10]` over 15 iterations of 600 matches each until 50% ± 1% A win rate.
+
+**Delta:** +139 / −0, one new file.
+
+---
+
+### R5 — Scene Integration & Skill Removal (`1c20b61`)
+
+**Scope:** The surgical removal of the skill system.
+- Deleted `SkillResolver.ts` (287 lines) and `SpiritRegistry.ts` (56 lines).
+- `spirits.json` stubbed (R5 build compat only; deleted in R6).
+- `GameScene.ts` rewritten around `Formation` / `DamageDistributor` / `SlotEngine`, introduced `BattleConfig` interface, auto-battle loop, `BATTLE_CONFIG_UPDATED` handler.
+- Added `FormationGridView.ts`: 3×3 Phaser.Graphics grid rendering all 8 symbol shapes (triangle / hexagon / square / cross / circle / heart / diamond / star) + HP bars + dead overlay.
+- `FxManager.ts` cleaned of `SkillResolver` / `SpiritRegistry` imports.
+- `EventNames.ts` updated: removed `SkillResolver` import, added `BATTLE_CONFIG_UPDATED` + `BattleConfigPayload` type.
+
+**Delta:** +546 / −945 across 8 files (net −399, single largest cleanup commit).
+
+---
+
+### R6 — Draft Scene Rewrite (`5c59d26`)
+
+**Scope:** Replaced spirit-based picker with symbol picker — 8 tiles in a 4×2 grid, A/B checkboxes per tile, GO button activates when both players hit 5 selections. Launches `GameScene` with `BattleConfig` (scales auto-calculated via `calculateScales`). `spirits.json` stub fully removed.
+
+**Delta:** +254 / −713 (net −459) in one file.
+
+---
+
+### R7 — HTML Config Panel + Bridge (`e0e60ff`)
+
+**Scope:** 1280px config panel below the Phaser canvas in `index.html`:
+- Left / right columns for A/B (HP, Bet, Target RTP%, Target Dmg%, readonly scales).
+- Middle section: payout base inputs, **Verify RTP** / **Simulate PvP** / **Auto Balance** buttons.
+- Symbol table: 8 rows (name / weight / prob / A-coin / A-dmg / B-coin / B-dmg / P1 / P2 checkboxes).
+- **Apply & Start** triggers `BATTLE_CONFIG_UPDATED` via bridge.
+
+`window.__dualSlotsBridge` added to `main.ts`:
+- `applyConfig()`: emits `BATTLE_CONFIG_UPDATED` to the Phaser EventBus.
+- `simulatePvP()`: runs `simulateWinRate()`, returns `Promise<{winRateA}>`.
+- `runAutoBalance()`: runs `autoBalance()`, pushes updated config back to the game.
+
+**Delta:** +476 / −4 across 2 files.
+
+---
+
+### R7 Fix — Draft / Bridge Sync on Fresh Load (`f27fe4b`, PR #27)
+
+**Root cause:** Bridge only emitted `BATTLE_CONFIG_UPDATED`, which `GameScene` listens for. On first page load `DraftScene` is active (GameScene not running yet), so the event fired into the void and selections never synced.
+
+**Fix:**
+- New event `DRAFT_CONFIG_OVERRIDE`; `DraftScene.create()` registers a listener that overwrites `selectedA` / `selectedB` Sets and auto-calls `_onGo()` (80ms repaint delay) when both sides reach 5.
+- `SHUTDOWN` handler cleans up the listener to prevent leaks.
+- Bridge `applyConfig()` now emits **both** events every call — only the active scene's listener is registered, the other fires harmlessly.
+- `cpApplyAndStart()` re-reads DOM checkbox state before `buildConfig()` to guard against stale `selA` / `selB` Set state.
+- Added 4-item test-plan checklist below the APPLY button in `index.html`.
+
+**Delta:** +65 / −5 across 4 files.
+
+---
+
+### R8 — Auto-Balance Button UX (`12095d0`)
+
+**Scope:** Enhance `cpAutoBalance()` in `index.html`.
+- **Per-iteration progress display**: `iter 3/15  exp=2.150  win A: 54.3%`.
+- **Self-contained JS simulation** (`cpRunAutoBalanceJS`): async with `setTimeout(0)` yield per iteration so the browser stays responsive during 15 × 600 match runs.
+- Falls back to pure JS if `__dualSlotsBridge` unavailable (works without Phaser).
+- Uses the Phaser bridge (TypeScript `autoBalance`) when available for full accuracy.
+- Colour feedback: gold (`#f1c40f`) during run, green (`#5dd88a`) on success, red on error.
+
+**Delta:** +124 / −17 in one file.
+
+---
+
+### R-Series Status & Open Items
+
+- ✅ Foundation: symbol data, payline generation, battle core, scale solver, auto-battle scene.
+- ✅ UI: draft scene (5-of-8 picker), HTML config panel with bridge, auto-balance button with progress feedback.
+- ⚠️ **Documentation debt before R-series**: `AGENTS.md` still describes the skill-based agent contracts from the Foundation phase. `AUDIT_REPORT_M1.md` reflects the pre-R state. Both should be reviewed for currency.
+- ⚠️ **Simulation re-baseline needed**: The T1.2 RTP measurements (167.95% / 56.36%) were taken on the imbalanced spirit roster. With symbol-based scale auto-balance, a fresh RTP / fairness sweep should be captured as the new baseline.
+- ⚠️ **Stale feature branches on remote**: `claude/t1-*`, `claude/task-c-draft-scene`, `refactor/r1-*` through `refactor/r8-*`, `fix/r7-*` — most are already merged into `master`. Pruning pass scheduled.

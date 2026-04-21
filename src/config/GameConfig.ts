@@ -16,3 +16,10 @@ export const SPIN_DURATION_MS  = 2000;
 /** Formation constraints */
 export const MIN_SPIRITS = 3;
 export const MAX_SPIRITS = 5;
+
+// Formation grid
+export const FORMATION_COLS  = 3;
+export const FORMATION_ROWS  = 3;
+export const FORMATION_UNITS = 5;
+export const UNIT_CELL_SIZE  = 75;   // px, square cell
+export const UNIT_CELL_GAP   = 6;    // px

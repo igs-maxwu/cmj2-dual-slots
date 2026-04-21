@@ -63,19 +63,26 @@ export class GameScene extends Phaser.Scene {
 
   constructor() { super({ key: 'GameScene' }); }
 
+  /** Rosters selected during DraftScene (undefined = use hardcoded defaults). */
+  private _draftRostersA?: string[];
+  private _draftRostersB?: string[];
+
   /**
    * Called by Phaser before `create()`.
-   * When data contains `{ mode: 'rematch' }` the battle state is reset
-   * immediately so the scene re-uses the same Phaser objects.
+   * Accepts optional roster arrays from DraftScene, and `{ mode: 'rematch' }`
+   * to reuse existing Phaser objects.
    *
-   * @param data - Optional scene-start payload. Pass `{ mode: 'rematch' }` to
-   *               trigger a full battle reset without rebuilding the scene.
+   * @param data - Optional scene-start payload.
+   *   - `{ mode: 'rematch' }` — triggers a full battle reset without rebuilding.
+   *   - `{ rostersA, rostersB }` — spirit-id arrays chosen during DraftScene.
    */
-  init(data?: { mode?: string }): void {
+  init(data?: { mode?: string; rostersA?: string[]; rostersB?: string[] }): void {
     if (data?.mode === 'rematch') {
       // _resetBattle needs live Phaser objects — schedule it for after create()
       this._pendingRematch = true;
     }
+    if (data?.rostersA) this._draftRostersA = data.rostersA;
+    if (data?.rostersB) this._draftRostersB = data.rostersB;
   }
 
   /** @override Builds the full scene graph and wires all event listeners. */
@@ -153,9 +160,11 @@ export class GameScene extends Phaser.Scene {
   }
 
   private _initBattle(): void {
-    // Default rosters for prototype (will be replaced by DraftScene selection)
-    this.spiritsA = registry.validateRoster(['SP_MENGCHENZHANG', 'SP_CANLAN', 'SP_YIN']);
-    this.spiritsB = registry.validateRoster(['SP_LUOLUO', 'SP_LINGYU', 'SP_ZHULUAN']);
+    // Use DraftScene selections when provided; fall back to hardcoded defaults.
+    const defaultA = ['SP_MENGCHENZHANG', 'SP_CANLAN', 'SP_YIN'];
+    const defaultB = ['SP_LUOLUO', 'SP_LINGYU', 'SP_ZHULUAN'];
+    this.spiritsA = registry.validateRoster(this._draftRostersA ?? defaultA);
+    this.spiritsB = registry.validateRoster(this._draftRostersB ?? defaultB);
 
     this.hpA    = this.spiritsA.map(s => s.baseHp);
     this.hpB    = this.spiritsB.map(s => s.baseHp);

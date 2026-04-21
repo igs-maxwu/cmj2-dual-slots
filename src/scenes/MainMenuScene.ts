@@ -20,7 +20,7 @@ export class MainMenuScene extends Phaser.Scene {
     this.input.once('pointerdown', () => {
       label.destroy();
       fsm.transition('GAME_IDLE');
-      this.scene.start('GameScene');
+      this.scene.start('DraftScene', { side: 'A' });
     });
   }
 }

@@ -46,9 +46,22 @@ bootFonts().then(() => {
   (window as unknown as Record<string, unknown>).__dualSlotsSymbols = SYMBOLS;
 
   (window as unknown as Record<string, unknown>).__dualSlotsBridge = {
-    /** Push a new BattleConfig into the running GameScene. */
+    /** Push a new BattleConfig into the running Phaser scene.
+     *
+     * Routing:
+     *  - If GameScene is active  → BATTLE_CONFIG_UPDATED hot-reloads the battle.
+     *  - If DraftScene is active → DRAFT_CONFIG_OVERRIDE pre-fills selections
+     *    and auto-transitions to GameScene once both sides have ≥5 picks.
+     *
+     * Emitting both events every call is intentional — only the active scene's
+     * listener is registered at any given time, so the other fires into the void.
+     */
     applyConfig: (cfg: BattleConfig) => {
       EventBus.emit(EventNames.BATTLE_CONFIG_UPDATED, cfg);
+      EventBus.emit(EventNames.DRAFT_CONFIG_OVERRIDE, {
+        selectedA: cfg.selectedA,
+        selectedB: cfg.selectedB,
+      });
     },
 
     /** Run N matches and return A win rate. Returns Promise<{winRateA}> */

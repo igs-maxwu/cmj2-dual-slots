@@ -36,7 +36,11 @@ export const EventNames = {
   DRAFT_COMPLETE:     'scene:draftComplete',
 
   // Config panel bridge (R7)
-  BATTLE_CONFIG_UPDATED: 'config:battleConfigUpdated',
+  BATTLE_CONFIG_UPDATED:  'config:battleConfigUpdated',
+  /** Emitted by the HTML panel APPLY & START button when DraftScene is active.
+   *  Payload: { selectedA: number[]; selectedB: number[] }
+   *  DraftScene overwrites its selection state and auto-starts the battle. */
+  DRAFT_CONFIG_OVERRIDE:  'config:draftConfigOverride',
 } as const;
 
 export type EventName = typeof EventNames[keyof typeof EventNames];

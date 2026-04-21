@@ -27,11 +27,14 @@ export class MainMenuScene extends Phaser.Scene {
 
     this.input.once('pointerdown', startDraft);
 
-    // HTML panel APPLY triggered while we're still on the menu: skip through to
-    // DraftScene and re-emit after it's mounted so its listener can consume it.
+    // HTML panel APPLY triggered while we're still on the menu: skip through
+    // to DraftScene and re-emit once its own listener is registered (end of
+    // DraftScene.create). Hooking the scene's CREATE event is race-free.
     const onOverride = (payload: { selectedA: number[]; selectedB: number[] }): void => {
+      this.scene.get('DraftScene').events.once(Phaser.Scenes.Events.CREATE, () => {
+        EventBus.emit(EventNames.DRAFT_CONFIG_OVERRIDE, payload);
+      });
       startDraft();
-      setTimeout(() => EventBus.emit(EventNames.DRAFT_CONFIG_OVERRIDE, payload), 50);
     };
     EventBus.once(EventNames.DRAFT_CONFIG_OVERRIDE, onOverride);
 

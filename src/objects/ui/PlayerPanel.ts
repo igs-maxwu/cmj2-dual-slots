@@ -38,30 +38,49 @@ export class PlayerPanel extends Phaser.GameObjects.Container {
     // and semi-transparent navy panel fill.
     this.add(new GoldFrame(this.scene, W, H, { radius: RADIUS.lg }));
 
-    // Team-colour banner behind the PLAYER label — a soft glow strip across
-    // the top of the panel that reads as "this side is 青龍 / 朱雀".
+    // Team-colour banner — gradient glow strip across the top of the panel.
+    // Reads as "this side is 青龍 / 朱雀".
     const banner = this.scene.add.graphics();
-    banner.fillStyle(teamColor, 0.35);
-    banner.fillRoundedRect(8, 8, W - 16, 40, RADIUS.md);
+    banner.fillStyle(teamColor, 0.45);
+    banner.fillRoundedRect(8, 8, W - 16, 46, RADIUS.md);
+    // Subtle top highlight on the banner
+    banner.fillStyle(0xffffff, 0.08);
+    banner.fillRoundedRect(8, 8, W - 16, 6, RADIUS.md);
     this.add(banner);
 
-    // Player label (team-tinted, serif)
+    // Chinese faction name — 青龍陣 / 朱雀陣 (display serif, gold-tinted)
+    const factionLabel = this.side === 'A' ? '青龍陣' : '朱雀陣';
     this.add(
-      this.scene.add.text(W / 2, 22, `PLAYER ${this.side}`, {
-        fontSize: `${FONT_SIZE.md}px`, fontFamily: FONT.bold, color: teamHex,
-        stroke: '#051326', strokeThickness: 2,
+      this.scene.add.text(W / 2, 22, factionLabel, {
+        fontSize:        `${FONT_SIZE.lg}px`,
+        fontFamily:      FONT.title,
+        color:           '#fff6da',
+        stroke:          '#051326',
+        strokeThickness: 2,
       }).setOrigin(0.5, 0.5)
     );
 
-    // Gold hairline divider under the label
+    // English faction label — AZURE / VERMILION (muted caps, letterSpacing via spacing)
+    const engLabel = this.side === 'A' ? 'AZURE' : 'VERMILION';
+    this.add(
+      this.scene.add.text(W / 2, 39, engLabel, {
+        fontSize:        `${FONT_SIZE.xs}px`,
+        fontFamily:      FONT.body,
+        color:           teamHex,
+        stroke:          '#051326',
+        strokeThickness: 1,
+      }).setOrigin(0.5, 0.5)
+    );
+
+    // Gold hairline divider under the banner
     const divider = this.scene.add.graphics();
     divider.fillStyle(GOLD.base, 0.6);
-    divider.fillRect(12, 50, W - 24, 1);
+    divider.fillRect(12, 56, W - 24, 1);
     this.add(divider);
 
-    // Formation grid (centred in panel, upper portion)
+    // Formation grid (centred in panel, sits below the faction banner)
     const gridOffsetX = (W - LAYOUT.gridW) / 2;
-    const gridOffsetY = 50;
+    const gridOffsetY = 60;   // was 50 — shifted down to clear taller banner
     this.grid = new FormationGrid(this.scene, gridOffsetX, gridOffsetY, this.side);
     this.add(this.grid);
 

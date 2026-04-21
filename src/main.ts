@@ -5,7 +5,13 @@ import { PreloadScene }  from '@/scenes/PreloadScene';
 import { MainMenuScene } from '@/scenes/MainMenuScene';
 import { DraftScene }    from '@/scenes/DraftScene';
 import { GameScene }     from '@/scenes/GameScene';
+import type { BattleConfig } from '@/scenes/GameScene';
 import { GameOverScene } from '@/scenes/GameOverScene';
+import { EventBus } from '@/systems/EventBus';
+import { EventNames } from '@/config/EventNames';
+import { SYMBOLS } from '@/config/SymbolsConfig';
+import { simulateWinRate, autoBalance, calculateScales } from '@/systems/ScaleCalculator';
+import { buildUnionPool, totalWeight } from '@/systems/SymbolPool';
 
 const config: Phaser.Types.Core.GameConfig = {
   type: Phaser.AUTO,
@@ -31,4 +37,65 @@ const bootFonts = (): Promise<void> =>
     ? document.fonts.ready.then(() => void 0)
     : Promise.resolve();
 
-bootFonts().then(() => new Phaser.Game(config));
+bootFonts().then(() => {
+  new Phaser.Game(config);
+
+  // ── Config panel bridge ──────────────────────────────────────────────────────
+  // Exposes typed callbacks so the vanilla-JS config panel can communicate
+  // with Phaser without a build step.
+  (window as unknown as Record<string, unknown>).__dualSlotsSymbols = SYMBOLS;
+
+  (window as unknown as Record<string, unknown>).__dualSlotsBridge = {
+    /** Push a new BattleConfig into the running GameScene. */
+    applyConfig: (cfg: BattleConfig) => {
+      EventBus.emit(EventNames.BATTLE_CONFIG_UPDATED, cfg);
+    },
+
+    /** Run N matches and return A win rate. Returns Promise<{winRateA}> */
+    simulatePvP: (cfg: BattleConfig, matches = 200): Promise<{ winRateA: number }> => {
+      return new Promise(resolve => {
+        // Run on next tick to avoid blocking the main thread
+        setTimeout(() => {
+          const rate = simulateWinRate(
+            cfg.selectedA, cfg.selectedB,
+            cfg.coinScaleA, cfg.dmgScaleA,
+            cfg.coinScaleB, cfg.dmgScaleB,
+            cfg.fairnessExp,
+            cfg.teamHpA, cfg.teamHpB,
+            cfg.betA, cfg.betB,
+            matches,
+          );
+          resolve({ winRateA: rate });
+        }, 0);
+      });
+    },
+
+    /** Auto-balance fairnessExp. Returns Promise<{fairnessExp, finalWinRate}> */
+    runAutoBalance: (cfg: BattleConfig): Promise<{ fairnessExp: number; finalWinRate: number }> => {
+      return new Promise(resolve => {
+        setTimeout(() => {
+          const result = autoBalance(
+            cfg.selectedA, cfg.selectedB,
+            cfg.teamHpA, cfg.teamHpB,
+            cfg.betA, cfg.betB,
+          );
+          // Recalculate scales with new fairnessExp and push to game
+          const pool = buildUnionPool(cfg.selectedA, cfg.selectedB, SYMBOLS);
+          const tw   = totalWeight(pool);
+          const scA  = calculateScales(97, 300, cfg.selectedA, tw, result.fairnessExp);
+          const scB  = calculateScales(97, 300, cfg.selectedB, tw, result.fairnessExp);
+          const updatedCfg: BattleConfig = {
+            ...cfg,
+            fairnessExp: result.fairnessExp,
+            coinScaleA:  scA.coinScale,
+            dmgScaleA:   scA.dmgScale,
+            coinScaleB:  scB.coinScale,
+            dmgScaleB:   scB.dmgScale,
+          };
+          EventBus.emit(EventNames.BATTLE_CONFIG_UPDATED, updatedCfg);
+          resolve(result);
+        }, 0);
+      });
+    },
+  };
+});

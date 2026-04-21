@@ -19,12 +19,110 @@
         background: #061a33;
         font-family: 'Noto Sans TC', 'PingFang TC', sans-serif;
         display: flex;
-        justify-content: center;
+        flex-direction: column;
         align-items: center;
-        height: 100vh;
-        overflow: hidden;
+        min-height: 100vh;
+        overflow-y: auto;
+        padding-bottom: 24px;
       }
       canvas { display: block; }
+
+      /* ── Config Panel ──────────────────────────────────────────── */
+      #config-panel {
+        width: 1280px;
+        max-width: 100%;
+        background: #0d1b2e;
+        border: 1px solid #1e3a5f;
+        border-top: none;
+        color: #c0d4ee;
+        font-family: 'Courier New', monospace;
+        font-size: 13px;
+        padding: 12px 16px;
+      }
+      #config-panel h3 {
+        color: #7ec8e3;
+        font-size: 14px;
+        margin-bottom: 8px;
+        letter-spacing: 1px;
+      }
+      .cp-row {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 8px;
+        align-items: flex-start;
+      }
+      .cp-col {
+        flex: 1;
+        background: #0a1520;
+        border: 1px solid #1e3a5f;
+        border-radius: 4px;
+        padding: 8px 10px;
+      }
+      .cp-col.col-a { border-left: 3px solid #3498db; }
+      .cp-col.col-b { border-left: 3px solid #e74c3c; }
+      .cp-col h4 { margin-bottom: 6px; font-size: 12px; letter-spacing: 1px; }
+      .col-a h4 { color: #3498db; }
+      .col-b h4 { color: #e74c3c; }
+      .cp-field {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 4px;
+      }
+      .cp-field label { min-width: 110px; color: #7ea3c7; }
+      .cp-field input[type=number] {
+        width: 80px; background: #152035; border: 1px solid #1e3a5f;
+        color: #e0e8ff; padding: 2px 4px; border-radius: 3px; font-size: 12px;
+      }
+      .cp-field .ro {
+        background: #091220; color: #5a8a9f; width: 90px;
+        padding: 2px 4px; border-radius: 3px; font-size: 12px;
+        border: 1px solid #0d1e30; display: inline-block; text-align: right;
+      }
+      .cp-mid {
+        background: #0a1520;
+        border: 1px solid #1e3a5f;
+        border-radius: 4px;
+        padding: 8px 10px;
+        margin-bottom: 8px;
+      }
+      .cp-mid h4 { color: #9eb8d0; font-size: 12px; margin-bottom: 6px; letter-spacing: 1px; }
+      .cp-btn {
+        background: #1a3a5c; color: #7ec8e3; border: 1px solid #2a5a8c;
+        padding: 4px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;
+        font-family: 'Courier New', monospace;
+      }
+      .cp-btn:hover { background: #244e7a; }
+      .cp-btn.go {
+        background: #1a4a2e; color: #5dd88a; border-color: #2a7a4e;
+        width: 100%; padding: 8px; font-size: 14px; letter-spacing: 2px;
+        margin-top: 8px;
+      }
+      .cp-btn.go:hover { background: #236638; }
+      .sym-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 4px;
+      }
+      .sym-table th {
+        color: #5a8aaa; text-align: center; padding: 2px 4px;
+        border-bottom: 1px solid #1e3a5f;
+      }
+      .sym-table td {
+        text-align: center; padding: 2px 4px; border-bottom: 1px solid #0d1e30;
+      }
+      .sym-table input[type=number] {
+        width: 50px; background: #152035; border: 1px solid #1e3a5f;
+        color: #e0e8ff; padding: 1px 3px; border-radius: 2px; font-size: 11px; text-align: center;
+      }
+      .sym-table .ro-cell {
+        color: #5a8a9f; font-size: 11px;
+      }
+      .sym-dot {
+        display: inline-block; width: 10px; height: 10px;
+        border-radius: 50%; margin-right: 4px; vertical-align: middle;
+      }
 
       /* Pre-warm the font metrics cache so Phaser's first text paint uses the
          calligraphy faces, not the fallback. The browser skips shaping for
@@ -52,5 +150,312 @@
       <span class="f5">MEGA WIN 0123456789</span>
     </div>
     <script type="module" src="/src/main.ts"></script>
+
+    <!-- ── Config Panel (below canvas, vanilla JS) ────────────────────────── -->
+    <div id="config-panel">
+      <h3>⚙ BATTLE CONFIGURATION</h3>
+
+      <!-- Player columns -->
+      <div class="cp-row">
+        <!-- Player A -->
+        <div class="cp-col col-a">
+          <h4>▶ PLAYER A</h4>
+          <div class="cp-field"><label>Team HP</label><input type="number" id="hpA" value="10000" min="100" step="100"></div>
+          <div class="cp-field"><label>Bet</label><input type="number" id="betA" value="100" min="1" step="1"></div>
+          <div class="cp-field"><label>Target RTP %</label><input type="number" id="rtpA" value="97" min="1" step="1"></div>
+          <div class="cp-field"><label>Target Dmg %</label><input type="number" id="dmgA" value="300" min="1" step="10"></div>
+          <div class="cp-field"><label>Coin Scale</label><span class="ro" id="coinScaleA">—</span></div>
+          <div class="cp-field"><label>Dmg Scale</label><span class="ro" id="dmgScaleA">—</span></div>
+        </div>
+        <!-- Player B -->
+        <div class="cp-col col-b">
+          <h4>◀ PLAYER B</h4>
+          <div class="cp-field"><label>Team HP</label><input type="number" id="hpB" value="10000" min="100" step="100"></div>
+          <div class="cp-field"><label>Bet</label><input type="number" id="betB" value="100" min="1" step="1"></div>
+          <div class="cp-field"><label>Target RTP %</label><input type="number" id="rtpB" value="97" min="1" step="1"></div>
+          <div class="cp-field"><label>Target Dmg %</label><input type="number" id="dmgB" value="300" min="1" step="10"></div>
+          <div class="cp-field"><label>Coin Scale</label><span class="ro" id="coinScaleB">—</span></div>
+          <div class="cp-field"><label>Dmg Scale</label><span class="ro" id="dmgScaleB">—</span></div>
+        </div>
+      </div>
+
+      <!-- Middle: payout + buttons -->
+      <div class="cp-mid">
+        <h4>PAYOUT BASE &amp; TOOLS</h4>
+        <div class="cp-row" style="align-items:center;flex-wrap:wrap;gap:10px;">
+          <div class="cp-field"><label>Match-3 payout</label><input type="number" id="pay3" value="5" min="1"></div>
+          <div class="cp-field"><label>Match-4 payout</label><input type="number" id="pay4" value="20" min="1"></div>
+          <div class="cp-field"><label>Match-5 payout</label><input type="number" id="pay5" value="100" min="1"></div>
+          <div class="cp-field"><label>Fairness Exp</label><input type="number" id="fairExp" value="2.0" min="0.1" max="10" step="0.1"></div>
+          <div class="cp-field"><label>Total Weight</label><span class="ro" id="totalW">—</span></div>
+        </div>
+        <div class="cp-row" style="gap:8px;flex-wrap:wrap;">
+          <button class="cp-btn" onclick="cpVerifyRTP()">Verify RTP</button>
+          <button class="cp-btn" onclick="cpSimulatePvP()">Simulate PvP</button>
+          <button class="cp-btn" id="autoBalanceBtn" onclick="cpAutoBalance()">⚖ Auto Balance</button>
+          <span id="balanceResult" style="color:#5dd88a;font-size:12px;"></span>
+        </div>
+      </div>
+
+      <!-- Symbol table -->
+      <div class="cp-mid">
+        <h4>SYMBOL TABLE</h4>
+        <table class="sym-table">
+          <thead>
+            <tr>
+              <th>Name</th><th>Weight</th><th>Prob%</th>
+              <th>A-coin</th><th>A-dmg</th><th>B-coin</th><th>B-dmg</th>
+              <th>P1</th><th>P2</th>
+            </tr>
+          </thead>
+          <tbody id="symTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Apply button -->
+      <button class="cp-btn go" onclick="cpApplyAndStart()">APPLY &amp; START BATTLE</button>
+    </div>
+
+    <script>
+    // ── Config panel vanilla JS ────────────────────────────────────────────────
+    (function() {
+
+    // Symbol definitions (mirrors SymbolsConfig.ts — kept in sync manually)
+    const SYMBOLS_CP = [
+      {id:0,name:'Yellow',color:'#FFD700',weight:20},
+      {id:1,name:'Orange',color:'#FF8C00',weight:15},
+      {id:2,name:'Green', color:'#32CD32',weight:12},
+      {id:3,name:'Cyan',  color:'#00FFFF',weight:10},
+      {id:4,name:'Blue',  color:'#1E90FF',weight:8},
+      {id:5,name:'Pink',  color:'#FF69B4',weight:6},
+      {id:6,name:'Red',   color:'#FF4500',weight:4},
+      {id:7,name:'Purple',color:'#9400D3',weight:2},
+    ];
+
+    // Track per-symbol checkbox state
+    const selA = new Set([0,1,2,3,4]);
+    const selB = new Set([0,1,2,3,4]);
+
+    // Build symbol table rows
+    function buildSymTable() {
+      const tbody = document.getElementById('symTableBody');
+      tbody.innerHTML = '';
+      SYMBOLS_CP.forEach(sym => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="sym-dot" style="background:${sym.color}"></span>${sym.name}</td>
+          <td><input type="number" id="w${sym.id}" value="${sym.weight}" min="1" max="100" onchange="cpUpdateCalc()"></td>
+          <td class="ro-cell" id="prob${sym.id}">—</td>
+          <td class="ro-cell" id="aCoin${sym.id}">—</td>
+          <td class="ro-cell" id="aDmg${sym.id}">—</td>
+          <td class="ro-cell" id="bCoin${sym.id}">—</td>
+          <td class="ro-cell" id="bDmg${sym.id}">—</td>
+          <td><input type="checkbox" id="chkA${sym.id}" ${selA.has(sym.id)?'checked':''} onchange="cpToggleSel('A',${sym.id},this.checked);cpUpdateCalc()"></td>
+          <td><input type="checkbox" id="chkB${sym.id}" ${selB.has(sym.id)?'checked':''} onchange="cpToggleSel('B',${sym.id},this.checked);cpUpdateCalc()"></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    window.cpToggleSel = function(side, id, checked) {
+      const s = side === 'A' ? selA : selB;
+      if (checked) s.add(id); else s.delete(id);
+    };
+
+    // LCG paylines (seed=12345, matches PaylinesGenerator.ts)
+    function genPaylines(rows, cols, count) {
+      let seed = 12345;
+      const rand = () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; };
+      const lines = [];
+      for (let i = 0; i < count; i++) {
+        let r = Math.floor(rand() * rows);
+        const line = [r];
+        for (let c = 1; c < cols; c++) {
+          const move = Math.floor(rand() * 3) - 1;
+          r += move;
+          if (r < 0) r = 1;
+          if (r >= rows) r = rows - 2;
+          line.push(r);
+        }
+        lines.push(line);
+      }
+      return lines;
+    }
+    const PAYLINES = genPaylines(4, 5, 100);
+
+    function getWeights() {
+      return SYMBOLS_CP.map(s => {
+        const el = document.getElementById('w' + s.id);
+        return el ? parseFloat(el.value) || s.weight : s.weight;
+      });
+    }
+
+    function getPayoutBase() {
+      return {
+        3: parseFloat(document.getElementById('pay3').value) || 5,
+        4: parseFloat(document.getElementById('pay4').value) || 20,
+        5: parseFloat(document.getElementById('pay5').value) || 100,
+      };
+    }
+
+    function calcScales(targetRtp, targetDmg, selIds, poolTotalW, fairExp) {
+      let rawEVCoin = 0, rawEVDmg = 0;
+      const pb = getPayoutBase();
+      selIds.forEach(id => {
+        const w = getWeights()[id];
+        const prob = w / poolTotalW;
+        const ratio = poolTotalW / w;
+        const dynCoin = Math.pow(ratio, 1.0);
+        const dynDmg  = Math.pow(ratio, fairExp);
+        const p3 = Math.pow(prob,3)*(1-prob), p4 = Math.pow(prob,4)*(1-prob), p5 = Math.pow(prob,5);
+        const ev = p3*pb[3] + p4*pb[4] + p5*pb[5];
+        rawEVCoin += ev * dynCoin;
+        rawEVDmg  += ev * dynDmg;
+      });
+      const rawCoin = rawEVCoin * 100 || 1;
+      const rawDmg  = rawEVDmg  * 100 || 1;
+      return { coinScale: targetRtp / rawCoin, dmgScale: targetDmg / rawDmg };
+    }
+
+    function getPoolTotalW(selAIds, selBIds, weights) {
+      const union = new Set([...selAIds, ...selBIds]);
+      let tw = 0;
+      union.forEach(id => { tw += weights[id]; });
+      return tw;
+    }
+
+    window.cpUpdateCalc = function() {
+      const weights   = getWeights();
+      const totalW    = weights.reduce((s,w) => s+w, 0);
+      const selAIds   = [...selA];
+      const selBIds   = [...selB];
+      const poolTW    = getPoolTotalW(selAIds, selBIds, weights);
+      const fairExp   = parseFloat(document.getElementById('fairExp').value) || 2.0;
+
+      document.getElementById('totalW').textContent = poolTW.toFixed(0);
+
+      // Probabilities
+      SYMBOLS_CP.forEach((s, i) => {
+        const el = document.getElementById('prob' + s.id);
+        if (el) el.textContent = ((weights[i]/totalW)*100).toFixed(1) + '%';
+      });
+
+      // Scales
+      const rtpA = parseFloat(document.getElementById('rtpA').value) || 97;
+      const dmgA = parseFloat(document.getElementById('dmgA').value) || 300;
+      const rtpB = parseFloat(document.getElementById('rtpB').value) || 97;
+      const dmgB = parseFloat(document.getElementById('dmgB').value) || 300;
+
+      const scA = calcScales(rtpA, dmgA, selAIds, poolTW, fairExp);
+      const scB = calcScales(rtpB, dmgB, selBIds, poolTW, fairExp);
+
+      document.getElementById('coinScaleA').textContent = scA.coinScale.toFixed(4);
+      document.getElementById('dmgScaleA').textContent  = scA.dmgScale.toFixed(4);
+      document.getElementById('coinScaleB').textContent = scB.coinScale.toFixed(4);
+      document.getElementById('dmgScaleB').textContent  = scB.dmgScale.toFixed(4);
+
+      // Per-symbol multipliers
+      SYMBOLS_CP.forEach((s, i) => {
+        const w = weights[i];
+        const ratio = poolTW / w;
+        const cMA = selAIds.includes(s.id) ? (Math.pow(ratio,1.0)*scA.coinScale).toFixed(2) : '—';
+        const dMA = selAIds.includes(s.id) ? (Math.pow(ratio,fairExp)*scA.dmgScale).toFixed(2) : '—';
+        const cMB = selBIds.includes(s.id) ? (Math.pow(ratio,1.0)*scB.coinScale).toFixed(2) : '—';
+        const dMB = selBIds.includes(s.id) ? (Math.pow(ratio,fairExp)*scB.dmgScale).toFixed(2) : '—';
+        const acEl = document.getElementById('aCoin'+s.id); if (acEl) acEl.textContent = cMA;
+        const adEl = document.getElementById('aDmg'+s.id);  if (adEl) adEl.textContent = dMA;
+        const bcEl = document.getElementById('bCoin'+s.id); if (bcEl) bcEl.textContent = cMB;
+        const bdEl = document.getElementById('bDmg'+s.id);  if (bdEl) bdEl.textContent = dMB;
+      });
+    };
+
+    window.cpVerifyRTP = function() {
+      cpUpdateCalc();
+      alert('Scales updated. RTP calculation is analytical — check coinScale values.');
+    };
+
+    window.cpSimulatePvP = function() {
+      if (window.__dualSlotsBridge) {
+        const cfg = buildConfig();
+        window.__dualSlotsBridge.simulatePvP(cfg, 200).then(r => {
+          document.getElementById('balanceResult').textContent =
+            `Win A: ${r.winRateA.toFixed(1)}%`;
+        }).catch(() => {
+          document.getElementById('balanceResult').textContent = 'simulation unavailable';
+        });
+      } else {
+        document.getElementById('balanceResult').textContent = '(bridge not ready)';
+      }
+    };
+
+    window.cpAutoBalance = function() {
+      if (window.__dualSlotsBridge) {
+        document.getElementById('balanceResult').textContent = 'balancing...';
+        document.getElementById('autoBalanceBtn').disabled = true;
+        const cfg = buildConfig();
+        window.__dualSlotsBridge.runAutoBalance(cfg).then(r => {
+          document.getElementById('fairExp').value = r.fairnessExp.toFixed(3);
+          document.getElementById('balanceResult').textContent =
+            'Done! exp=' + r.fairnessExp.toFixed(3) + ' (win A: ' + r.finalWinRate.toFixed(1) + '%)';
+          document.getElementById('autoBalanceBtn').disabled = false;
+          cpUpdateCalc();
+        }).catch(err => {
+          document.getElementById('balanceResult').textContent = 'error: ' + err;
+          document.getElementById('autoBalanceBtn').disabled = false;
+        });
+      } else {
+        document.getElementById('balanceResult').textContent = '(bridge not ready)';
+      }
+    };
+
+    function buildConfig() {
+      cpUpdateCalc();
+      const weights   = getWeights();
+      const selAIds   = [...selA];
+      const selBIds   = [...selB];
+      const poolTW    = getPoolTotalW(selAIds, selBIds, weights);
+      const fairExp   = parseFloat(document.getElementById('fairExp').value) || 2.0;
+      const rtpA = parseFloat(document.getElementById('rtpA').value) || 97;
+      const dmgA = parseFloat(document.getElementById('dmgA').value) || 300;
+      const rtpB = parseFloat(document.getElementById('rtpB').value) || 97;
+      const dmgB = parseFloat(document.getElementById('dmgB').value) || 300;
+      const scA = calcScales(rtpA, dmgA, selAIds, poolTW, fairExp);
+      const scB = calcScales(rtpB, dmgB, selBIds, poolTW, fairExp);
+      return {
+        selectedA:   selAIds,
+        selectedB:   selBIds,
+        teamHpA:     parseFloat(document.getElementById('hpA').value) || 10000,
+        teamHpB:     parseFloat(document.getElementById('hpB').value) || 10000,
+        betA:        parseFloat(document.getElementById('betA').value) || 100,
+        betB:        parseFloat(document.getElementById('betB').value) || 100,
+        coinScaleA:  scA.coinScale,
+        dmgScaleA:   scA.dmgScale,
+        coinScaleB:  scB.coinScale,
+        dmgScaleB:   scB.dmgScale,
+        fairnessExp: fairExp,
+      };
+    }
+
+    window.cpApplyAndStart = function() {
+      const cfg = buildConfig();
+      if (cfg.selectedA.length < 5 || cfg.selectedB.length < 5) {
+        alert('Each player must select at least 5 symbols. Check the symbol table checkboxes.');
+        return;
+      }
+      if (window.__dualSlotsBridge) {
+        window.__dualSlotsBridge.applyConfig(cfg);
+      } else {
+        // Fallback: reload page won't work — display warning
+        alert('Game bridge not ready. Start the game first via the title screen.');
+      }
+    };
+
+    // Init
+    buildSymTable();
+    // Delay first calc until bridge may be available
+    setTimeout(cpUpdateCalc, 500);
+
+    })();
+    </script>
   </body>
 </html>

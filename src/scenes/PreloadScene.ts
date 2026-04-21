@@ -34,7 +34,7 @@ export class PreloadScene extends Phaser.Scene {
       { style: 'normal', weight: '100 900' }
     );
     notoFont.load().then((loaded) => {
-      document.fonts.add(loaded);
+      (document.fonts as unknown as { add(f: FontFace): void }).add(loaded);
     }).catch((err) => {
       console.warn('[Preload] NotoSansTC font failed to load:', err);
     });
